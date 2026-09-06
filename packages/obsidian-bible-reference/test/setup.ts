@@ -77,6 +77,7 @@ mock.module('obsidian', () => ({
   Notice: mock(),
   Component,
   HoverPopover,
+  TFile: class {},
   // The suggesters extend these at runtime, so a bare stub is enough to let a
   // test instantiate one and drive it directly. MarkdownView is a value, not
   // just a type, in VerseLookupSuggestModal - without it that module cannot be
