@@ -5,25 +5,40 @@ class FakeElement {
   public disabled = false
   public value = ''
   public readonly children: FakeElement[] = []
+  private ownText = ''
+
+  public get textContent(): string {
+    return (
+      this.ownText + this.children.map((child) => child.textContent).join('')
+    )
+  }
 
   public addClass(): void {}
   public setAttr(): void {}
-  public setText(): void {}
-  public appendText(): void {}
+  public setText(text: string): void {
+    this.ownText = text
+  }
+  public appendText(text: string): void {
+    this.ownText += text
+  }
   public focus(): void {}
   public empty(): void {
     this.children.length = 0
   }
-  public createDiv(): FakeElement {
+  public createDiv(options?: { text?: string }): FakeElement {
     const child = new FakeElement()
+    child.ownText = options?.text ?? ''
     this.children.push(child)
     return child
   }
-  public createSpan(): FakeElement {
-    return this.createDiv()
+  public createSpan(options?: { text?: string }): FakeElement {
+    return this.createDiv(options)
   }
-  public createEl(_tag: string, options?: { value?: string }): FakeElement {
-    const child = this.createDiv()
+  public createEl(
+    _tag: string,
+    options?: { text?: string; value?: string }
+  ): FakeElement {
+    const child = this.createDiv(options)
     child.value = options?.value ?? ''
     return child
   }

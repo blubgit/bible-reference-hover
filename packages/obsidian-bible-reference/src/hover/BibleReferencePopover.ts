@@ -8,6 +8,7 @@ import {
 } from '../utils/scanBibleReferences'
 import { BibleReferenceLookup, ReferencePassage } from './BibleReferenceLookup'
 import { buildEmbeddedWidget } from './buildEmbeddedWidget'
+import { formatVerseLabel } from './formatVerseLabel'
 import { SourceTarget } from './SourceTarget'
 
 type PassageState =
@@ -148,7 +149,7 @@ export class BibleReferencePopover extends HoverPopover {
         })
         state.passage.verses.forEach((verse) => {
           const line = section.createEl('p')
-          line.createEl('strong', { text: `${verse.verse}. ` })
+          line.createEl('strong', { text: `${formatVerseLabel(verse)}. ` })
           line.appendText(verse.text.replace(/<br\s*\/?>/giu, ' ').trim())
         })
       }

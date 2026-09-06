@@ -1,6 +1,7 @@
 import { BibleReferencePluginSettings } from '../data/constants'
 import { OFFLINE_VERSION_KEY } from '../data/BibleVersionCollection'
 import { ReferencePassage } from './BibleReferenceLookup'
+import { formatVerseLabel } from './formatVerseLabel'
 
 const cleanText = (value: string): string =>
   value
@@ -37,7 +38,7 @@ const calloutWidget = (
       )})**`
     )
     passage.verses.forEach((verse) => {
-      lines.push(`> **${verse.verse}.** ${cleanText(verse.text)}`)
+      lines.push(`> **${formatVerseLabel(verse)}.** ${cleanText(verse.text)}`)
     })
   })
   return lines.join('\n')
@@ -61,9 +62,9 @@ const detailsWidget = (
     )
     passage.verses.forEach((verse) => {
       lines.push(
-        `<p><strong>${verse.verse}.</strong> ${escapeHtml(
-          cleanText(verse.text)
-        )}</p>`
+        `<p><strong>${escapeHtml(
+          formatVerseLabel(verse)
+        )}.</strong> ${escapeHtml(cleanText(verse.text))}</p>`
       )
     })
   })
