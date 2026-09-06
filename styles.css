@@ -36,6 +36,7 @@
   max-height: min(70vh, 44rem);
   max-width: min(90vw, 42rem);
   min-width: min(24rem, 90vw);
+  overflow: hidden;
   padding: 0;
 }
 
@@ -44,6 +45,7 @@
   background: var(--background-primary);
   border-bottom: 1px solid var(--background-modifier-border);
   display: flex;
+  flex: 0 0 auto;
   gap: var(--size-4-2);
   justify-content: space-between;
   padding: var(--size-4-3);
@@ -83,7 +85,10 @@
 }
 
 .obr-reference-passages {
-  overflow: auto;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   padding: var(--size-4-3);
 }
 
