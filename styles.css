@@ -20,7 +20,7 @@
 .obr-bible-reference {
   border-bottom: 1px dotted var(--text-accent);
   border-radius: var(--radius-s);
-  cursor: help;
+  cursor: pointer;
   text-decoration: none;
 }
 

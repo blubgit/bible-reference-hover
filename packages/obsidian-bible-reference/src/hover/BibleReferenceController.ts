@@ -20,6 +20,7 @@ import {
 export class BibleReferenceController implements HoverParent {
   public hoverPopover: BibleReferencePopover | null = null
   public readonly lookup: BibleReferenceLookup
+  private pendingPopover: BibleReferencePopover | null = null
 
   public constructor(private readonly plugin: BibleReferencePlugin) {
     this.lookup = new BibleReferenceLookup(() => this.plugin.settings)
@@ -33,8 +34,9 @@ export class BibleReferenceController implements HoverParent {
   ): void {
     const references = scanBibleReferences(source.text)
     if (references.length === 0) return
-    this.hoverPopover?.unload()
-    this.hoverPopover = new BibleReferencePopover(
+    this.dismissPopovers()
+    let popover: BibleReferencePopover
+    popover = new BibleReferencePopover(
       this,
       source,
       references,
@@ -42,8 +44,15 @@ export class BibleReferenceController implements HoverParent {
       () => this.plugin.settings,
       targetEl,
       waitTime,
-      point
+      point,
+      () => {
+        if (this.pendingPopover === popover) this.pendingPopover = null
+      }
     )
+    // HoverPopover assigns itself to hoverPopover only when its delay expires.
+    // Assigning it there early makes Obsidian mistake it for an older popover
+    // and dismiss the new popover from inside HoverPopover.onShow().
+    this.pendingPopover = popover
   }
 
   public openEditorSelection(editor: Editor, point?: Point): void {
@@ -82,11 +91,18 @@ export class BibleReferenceController implements HoverParent {
   }
 
   public close(): void {
-    this.hoverPopover?.unload()
-    this.hoverPopover = null
+    this.dismissPopovers()
   }
 
   public focusFirstAction(): void {
-    this.hoverPopover?.focusFirstAction()
+    setTimeout(() => {
+      ;(this.hoverPopover ?? this.pendingPopover)?.focusFirstAction()
+    }, 0)
+  }
+
+  private dismissPopovers(): void {
+    const popovers = new Set([this.pendingPopover, this.hoverPopover])
+    this.pendingPopover = null
+    popovers.forEach((popover) => popover?.dismiss())
   }
 }

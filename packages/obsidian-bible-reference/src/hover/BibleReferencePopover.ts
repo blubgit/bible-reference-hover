@@ -23,6 +23,7 @@ export class BibleReferencePopover extends HoverPopover {
   private referenceEl: HTMLElement
   private editButton: HTMLButtonElement
   private embedButton: HTMLButtonElement
+  private closed = false
 
   public constructor(
     parent: HoverParent,
@@ -32,7 +33,8 @@ export class BibleReferencePopover extends HoverPopover {
     private readonly getSettings: () => BibleReferencePluginSettings,
     targetEl: HTMLElement | null,
     waitTime: number,
-    staticPos?: Point
+    staticPos?: Point,
+    private readonly onClosed: () => void = () => {}
   ) {
     super(parent, targetEl, waitTime, staticPos)
     this.references = references
@@ -63,6 +65,20 @@ export class BibleReferencePopover extends HoverPopover {
     })
     this.renderChips()
     void this.loadPassages()
+  }
+
+  public dismiss(): void {
+    // Obsidian's runtime exposes hide(), but the public type declaration omits
+    // it. Calling it is necessary to cancel delayed popovers and remove the
+    // runtime's target listeners and global popover tracking.
+    ;(this as unknown as { hide: () => void }).hide()
+  }
+
+  public override onunload(): void {
+    super.onunload()
+    if (this.closed) return
+    this.closed = true
+    this.onClosed()
   }
 
   public focusFirstAction(): void {
