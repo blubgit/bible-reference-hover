@@ -35,8 +35,7 @@ export class BibleReferenceController implements HoverParent {
     const references = scanBibleReferences(source.text)
     if (references.length === 0) return
     this.dismissPopovers()
-    let popover: BibleReferencePopover
-    popover = new BibleReferencePopover(
+    const popover = new BibleReferencePopover(
       this,
       source,
       references,
