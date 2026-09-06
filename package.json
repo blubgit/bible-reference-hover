@@ -1,0 +1,43 @@
+{
+  "name": "bible-reference-hover-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Monorepo for the Bible Reference Hover plugin and its Bible reference toolkit packages.",
+  "engines": {
+    "bun": ">=1.1.0"
+  },
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "bun run --filter bible-reference-hover dev",
+    "build:packages": "bun run --filter bible-book-names-intl build && bun run --filter bible-reference-toolkit build",
+    "build": "bun run build:packages && bun run --filter bible-reference-hover build",
+    "pretest": "bun run build:packages",
+    "test": "bun test",
+    "lint": "eslint .",
+    "prettier": "prettier --check .",
+    "precommit": "bun run lint && bun run prettier",
+    "prepare": "husky",
+    "lint:fix": "eslint . --fix",
+    "prettier:fix": "prettier --write ."
+  },
+  "keywords": [
+    "bible",
+    "bible reference",
+    "obsidian",
+    "obsidian plugin",
+    "bible-reference-toolkit"
+  ],
+  "author": "blubgit",
+  "license": "MIT",
+  "devDependencies": {
+    "@eslint/js": "^9.0.0",
+    "all-contributors-cli": "6.26.1",
+    "eslint": "^10.0.0",
+    "globals": "^16.0.0",
+    "husky": "^9.1.7",
+    "prettier": "3.8.3",
+    "typescript-eslint": "^8.0.0"
+  }
+}
