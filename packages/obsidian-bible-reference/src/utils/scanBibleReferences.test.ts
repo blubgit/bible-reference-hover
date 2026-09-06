@@ -27,6 +27,18 @@ describe('scanBibleReferences', () => {
     expect(result[0].occurrences).toHaveLength(2)
   })
 
+  test('treats a period without a following digit as sentence punctuation', () => {
+    const source = 'Ephesians 3:3-6.\n1 John 1:4-5'
+    const result = scanBibleReferences(source)
+
+    expect(result).toHaveLength(2)
+    expect(result[0].normalized).toBe('Ephesians 3:3–6')
+    expect(result[0].occurrences).toEqual([
+      { raw: 'Ephesians 3:3-6', start: 0, end: source.indexOf('.') },
+    ])
+    expect(result[1].normalized).toBe('1 John 1:4–5')
+  })
+
   test.each([
     'Version 3.16 is current.',
     'The date is 3.16.2026.',

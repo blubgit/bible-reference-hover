@@ -28,11 +28,15 @@ export interface ScannedBibleReference {
 }
 
 const DASH_CLASS = DASH_CHARS.replace(/[\\\]^-]/g, '\\$&')
-const CHAPTER_VERSE = '\\d{1,3}\\s*[:.]\\s*(?:\\d{1,3}|a)\\b'
-const ENDPOINT = '(?:(?:\\d{1,3}\\s*[:.]\\s*)?(?:\\d{1,3}|a)\\b)'
-const RANGE = `(?:\\s*[${DASH_CLASS}]\\s*${ENDPOINT})?`
+// A reference may contain spaces or tabs, but punctuation must never bridge
+// lines. Otherwise a sentence-ending period can consume the first digit of
+// the following line as a dotted chapter/verse boundary.
+const INLINE_SPACE = '[^\\S\\r\\n]*'
+const CHAPTER_VERSE = `\\d{1,3}${INLINE_SPACE}[:.]${INLINE_SPACE}(?:\\d{1,3}|a)\\b`
+const ENDPOINT = `(?:(?:\\d{1,3}${INLINE_SPACE}[:.]${INLINE_SPACE})?(?:\\d{1,3}|a)\\b)`
+const RANGE = `(?:${INLINE_SPACE}[${DASH_CLASS}]${INLINE_SPACE}${ENDPOINT})?`
 const REFERENCE_TAIL_REG = new RegExp(
-  `^${CHAPTER_VERSE}${RANGE}(?:\\s*[,;]\\s*${ENDPOINT}${RANGE})*(?:\\s*@([a-z][a-z0-9-]*))?`,
+  `^${CHAPTER_VERSE}${RANGE}(?:${INLINE_SPACE}[,;]${INLINE_SPACE}${ENDPOINT}${RANGE})*(?:${INLINE_SPACE}@([a-z][a-z0-9-]*))?`,
   'iu'
 )
 const CHAPTER_VERSE_START_REG = new RegExp(CHAPTER_VERSE, 'giu')

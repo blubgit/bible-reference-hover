@@ -96,10 +96,11 @@ export const TRANSLATION_VERSION_KEY_REG = /^[a-zA-Z]+-?[a-zA-Z0-9]*$/isu
 /**
  * Fold the two supported chapter/verse separators to the canonical colon.
  * A period is changed only when it sits between a number and a verse value,
- * leaving abbreviation periods ("Eph.") and sentence punctuation untouched.
+ * on the same line, leaving abbreviation periods ("Eph.") and sentence
+ * punctuation untouched.
  */
 export const normalizeChapterVerseSeparators = (value: string): string =>
-  value.replace(/(\d)\s*\.\s*(?=(?:\d{1,3}|a)\b)/giu, '$1:')
+  value.replace(/(\d)[^\S\r\n]*\.[^\S\r\n]*(?=(?:\d{1,3}|a)\b)/giu, '$1:')
 
 // export const BOOK_REG = /[123]*\s*[A-Z\[\\\]^_`a-z]{2,}/
 
