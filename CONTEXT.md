@@ -32,3 +32,12 @@ catalog (`SupportedLanguages`) or is a known English-fallback code. Enforced by
 uppercase `zh_TW`) fails CI instead of silently anglicizing book names. Codes with
 no catalog live in that test's `ENGLISH_FALLBACK`; catalogs with no version live in
 `CATALOGS_WITHOUT_VERSION` (currently `da`, `jp`).
+
+## Hover previews
+
+**Popover ownership** — Obsidian's `HoverPopover` owns the public
+`HoverParent.hoverPopover` slot. It assigns that slot only when the hover delay
+expires and the popover is shown. Controllers may track a separate pending
+popover for cancellation, but must not assign the pending instance to
+`hoverPopover`; doing so makes Obsidian treat the new instance as an older
+popover and hide it during `onShow()`.
