@@ -7,6 +7,8 @@ class FakeElement {
   public readonly children: FakeElement[] = []
   private ownText = ''
 
+  public constructor(public readonly tagName = 'div') {}
+
   public get textContent(): string {
     return (
       this.ownText + this.children.map((child) => child.textContent).join('')
@@ -26,21 +28,32 @@ class FakeElement {
     this.children.length = 0
   }
   public createDiv(options?: { text?: string }): FakeElement {
-    const child = new FakeElement()
+    const child = new FakeElement('div')
     child.ownText = options?.text ?? ''
     this.children.push(child)
     return child
   }
   public createSpan(options?: { text?: string }): FakeElement {
-    return this.createDiv(options)
+    const child = new FakeElement('span')
+    child.ownText = options?.text ?? ''
+    this.children.push(child)
+    return child
   }
   public createEl(
     _tag: string,
     options?: { text?: string; value?: string }
   ): FakeElement {
-    const child = this.createDiv(options)
+    const child = new FakeElement(_tag)
+    child.ownText = options?.text ?? ''
+    this.children.push(child)
     child.value = options?.value ?? ''
     return child
+  }
+  public findByTagName(tagName: string): FakeElement[] {
+    return this.children.flatMap((child) => [
+      ...(child.tagName === tagName ? [child] : []),
+      ...child.findByTagName(tagName),
+    ])
   }
   public detach(): void {
     this.isConnected = false

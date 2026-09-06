@@ -20,7 +20,8 @@ describe('buildEmbeddedWidget', () => {
   test('builds a collapsed Bible callout', () => {
     const widget = buildEmbeddedWidget(passages, DEFAULT_SETTINGS)
     expect(widget).toContain('> [!bible]- John 3:16')
-    expect(widget).toContain('> **John 3:16.** For God so loved.')
+    expect(widget).toContain('> **John 3:16 (ESV)**')
+    expect(widget).toContain('> **16.** For God so loved.')
   })
 
   test('builds a quote callout', () => {
@@ -39,8 +40,7 @@ describe('buildEmbeddedWidget', () => {
     })
     expect(html).toContain('<details class="obr-bible-widget">')
     expect(html).toContain('<summary>John 3:16</summary>')
-    expect(html).toContain(
-      '<p><strong>John 3:16.</strong> For God so loved.</p>'
-    )
+    expect(html).toContain('<p><strong>John 3:16 (ESV)</strong></p>')
+    expect(html).toContain('<p><strong>16.</strong> For God so loved.</p>')
   })
 })

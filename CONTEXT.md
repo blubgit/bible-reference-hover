@@ -41,3 +41,9 @@ expires and the popover is shown. Controllers may track a separate pending
 popover for cancellation, but must not assign the pending instance to
 `hoverPopover`; doing so makes Obsidian treat the new instance as an older
 popover and hide it during `onShow()`.
+
+**Chapter group** — consecutive returned verses belonging to the same book and
+chapter. Popovers and embedded widgets put the complete, exact verse range in
+the chapter-group heading (for example, `1 John 2:5–6`) and show only the verse
+number beside each verse. A new heading is created whenever the returned book
+or chapter changes.

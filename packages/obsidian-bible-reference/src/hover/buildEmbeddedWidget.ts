@@ -1,7 +1,7 @@
 import { BibleReferencePluginSettings } from '../data/constants'
 import { OFFLINE_VERSION_KEY } from '../data/BibleVersionCollection'
 import { ReferencePassage } from './BibleReferenceLookup'
-import { formatVerseLabel } from './formatVerseLabel'
+import { groupVersesByChapter } from './groupVersesByChapter'
 
 const cleanText = (value: string): string =>
   value
@@ -30,15 +30,16 @@ const calloutWidget = (
 ): string => {
   const fold = settings.embeddedWidgetInitiallyCollapsed === false ? '+' : '-'
   const lines = [`> [!${type}]${fold} ${titleOf(passages)}`]
-  passages.forEach((passage, passageIndex) => {
-    if (passageIndex > 0) lines.push('>')
-    lines.push(
-      `> **${passage.reference.normalized} (${translationLabel(
-        passage.translationKey
-      )})**`
-    )
-    passage.verses.forEach((verse) => {
-      lines.push(`> **${formatVerseLabel(verse)}.** ${cleanText(verse.text)}`)
+  let groupIndex = 0
+  passages.forEach((passage) => {
+    groupVersesByChapter(passage.verses).forEach((group) => {
+      if (groupIndex++ > 0) lines.push('>')
+      lines.push(
+        `> **${group.label} (${translationLabel(passage.translationKey)})**`
+      )
+      group.verses.forEach((verse) => {
+        lines.push(`> **${verse.verse}.** ${cleanText(verse.text)}`)
+      })
     })
   })
   return lines.join('\n')
@@ -54,20 +55,22 @@ const detailsWidget = (
     `<details class="obr-bible-widget"${open}>`,
     `<summary>${escapeHtml(titleOf(passages))}</summary>`,
   ]
-  passages.forEach((passage) => {
-    lines.push(
-      `<p><strong>${escapeHtml(passage.reference.normalized)} (${escapeHtml(
-        translationLabel(passage.translationKey)
-      )})</strong></p>`
-    )
-    passage.verses.forEach((verse) => {
+  passages.forEach((passage) =>
+    groupVersesByChapter(passage.verses).forEach((group) => {
       lines.push(
-        `<p><strong>${escapeHtml(
-          formatVerseLabel(verse)
-        )}.</strong> ${escapeHtml(cleanText(verse.text))}</p>`
+        `<p><strong>${escapeHtml(group.label)} (${escapeHtml(
+          translationLabel(passage.translationKey)
+        )})</strong></p>`
       )
+      group.verses.forEach((verse) => {
+        lines.push(
+          `<p><strong>${verse.verse}.</strong> ${escapeHtml(
+            cleanText(verse.text)
+          )}</p>`
+        )
+      })
     })
-  })
+  )
   lines.push('</details>')
   return lines.join('\n')
 }

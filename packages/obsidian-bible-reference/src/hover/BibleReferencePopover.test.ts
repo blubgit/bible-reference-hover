@@ -4,7 +4,7 @@ import { BibleReferencePopover } from './BibleReferencePopover'
 import { SourceTarget } from './SourceTarget'
 
 describe('BibleReferencePopover passage labels', () => {
-  test('shows the book, chapter, and verse for comma-separated chapters', async () => {
+  test('uses chapter headings and numeric verse labels across chapters', async () => {
     const references = scanBibleReferences('1 John 1:4-5, 2:5-6, 3:1-2')
     const source: SourceTarget = {
       text: '1 John 1:4-5, 2:5-6, 3:1-2',
@@ -39,12 +39,17 @@ describe('BibleReferencePopover passage labels', () => {
     )
     await new Promise((resolve) => setTimeout(resolve, 5))
 
-    const rendered = popover.hoverEl.textContent ?? ''
-    expect(rendered).toContain('1 John 1:4. ')
-    expect(rendered).toContain('1 John 1:5. ')
-    expect(rendered).toContain('1 John 2:5. ')
-    expect(rendered).toContain('1 John 2:6. ')
-    expect(rendered).toContain('1 John 3:1. ')
-    expect(rendered).toContain('1 John 3:2. ')
+    const hoverEl = popover.hoverEl as unknown as {
+      findByTagName(tagName: string): Array<{ textContent: string }>
+    }
+    const headings = hoverEl
+      .findByTagName('h4')
+      .map((element) => element.textContent)
+    const verseLabels = hoverEl
+      .findByTagName('strong')
+      .map((element) => element.textContent)
+
+    expect(headings).toEqual(['1 John 1:4–5', '1 John 2:5–6', '1 John 3:1–2'])
+    expect(verseLabels).toEqual(['4. ', '5. ', '5. ', '6. ', '1. ', '2. '])
   })
 })
