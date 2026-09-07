@@ -39,6 +39,28 @@ describe('scanBibleReferences', () => {
     expect(result[1].normalized).toBe('1 John 1:4–5')
   })
 
+  test('does not treat horizontal rules after frontmatter as frontmatter', () => {
+    const source = [
+      '---',
+      'title: Trials, endurance, and genuine faith',
+      '---',
+      '',
+      'A question.',
+      '',
+      '---',
+      '',
+      '- **James 1:2–4** — the testing of your faith produces endurance.',
+      '',
+      '---',
+      '',
+      'A concluding note.',
+    ].join('\n')
+
+    expect(scanBibleReferences(source).map((reference) => reference.normalized)).toEqual([
+      'James 1:2–4',
+    ])
+  })
+
   test.each([
     'Version 3.16 is current.',
     'The date is 3.16.2026.',

@@ -67,7 +67,15 @@ const getExcludedRanges = (
   text: string
 ): Array<{ start: number; end: number }> => {
   const ranges: Array<{ start: number; end: number }> = []
-  collectMatches(text, /^---\s*$[\s\S]*?^---\s*$/gmu, ranges)
+  // YAML frontmatter can appear only at the beginning of a note. A global
+  // delimiter-pair match also treats later horizontal rules as frontmatter,
+  // which can hide all references between two ordinary `---` lines.
+  if (text.startsWith('---\n') || text.startsWith('---\r\n')) {
+    const frontmatter = text.match(/^---\s*$[\s\S]*?^---\s*$/mu)
+    if (frontmatter) {
+      ranges.push({ start: 0, end: frontmatter[0].length })
+    }
+  }
   collectMatches(text, /^(```|~~~)[^\n]*$[\s\S]*?^\1\s*$/gmu, ranges)
   collectMatches(text, /`+[^`\n]*`+/gu, ranges)
   collectMatches(text, /https?:\/\/[^\s<>)]+/giu, ranges)
