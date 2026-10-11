@@ -9,6 +9,7 @@ import {
 import type BibleReferencePlugin from '../main'
 import { scanBibleReferences } from '../utils/scanBibleReferences'
 import { BibleReferenceController } from './BibleReferenceController'
+import { findSourceBlock } from './findSourceBlock'
 import { CodeMirrorSourceTarget } from './SourceTarget'
 
 const buildDecorations = (
@@ -42,23 +43,13 @@ const findBlock = (
   view: EditorView,
   position: number
 ): { from: number; to: number; text: string } => {
-  const current = view.state.doc.lineAt(position)
-  const trimmed = current.text.trimStart()
-  if (/^#{1,6}\s/u.test(trimmed) || /^(?:[-+*]|\d+[.)])\s/u.test(trimmed)) {
-    return { from: current.from, to: current.to, text: current.text }
-  }
-
-  let first = current.number
-  let last = current.number
-  while (first > 1 && view.state.doc.line(first - 1).text.trim() !== '') first--
-  while (
-    last < view.state.doc.lines &&
-    view.state.doc.line(last + 1).text.trim() !== ''
-  ) {
-    last++
-  }
-  const from = view.state.doc.line(first).from
-  const to = view.state.doc.line(last).to
+  const { doc } = view.state
+  const { first, last } = findSourceBlock(
+    doc.toJSON(),
+    doc.lineAt(position).number - 1
+  )
+  const from = doc.line(first + 1).from
+  const to = doc.line(last + 1).to
   return { from, to, text: view.state.doc.sliceString(from, to) }
 }
 

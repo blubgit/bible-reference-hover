@@ -10,6 +10,7 @@ import type BibleReferencePlugin from '../main'
 import { scanBibleReferences } from '../utils/scanBibleReferences'
 import { BibleReferenceLookup } from './BibleReferenceLookup'
 import { BibleReferencePopover } from './BibleReferencePopover'
+import { findSourceBlock } from './findSourceBlock'
 import {
   EditorSourceTarget,
   FileSourceTarget,
@@ -75,7 +76,14 @@ export class BibleReferenceController implements HoverParent {
     const file = this.plugin.app.vault.getAbstractFileByPath(context.sourcePath)
     if (!info || !(file instanceof TFile)) return
     const content = await this.plugin.app.vault.cachedRead(file)
-    const range = lineRangeToOffsets(content, info.lineStart, info.lineEnd)
+    // Obsidian reports a single list item as its own section; widen it to the
+    // surrounding list so reading view matches Live Preview.
+    const block = findSourceBlock(content.split('\n'), info.lineStart)
+    const range = lineRangeToOffsets(
+      content,
+      Math.min(block.first, info.lineStart),
+      Math.max(block.last, info.lineEnd)
+    )
     this.open(
       targetEl,
       new FileSourceTarget(
