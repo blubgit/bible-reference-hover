@@ -25,7 +25,10 @@ class ReadingReferenceChild extends MarkdownRenderChild {
       const parent = textNode.parentElement
       if (!parent || parent.closest(EXCLUDED_SELECTOR)) continue
       if (
-        scanBibleReferences(textNode.data, { excludeMarkdown: false }).length
+        scanBibleReferences(textNode.data, {
+          excludeMarkdown: false,
+          ...this.controller.scanOptions(),
+        }).length
       ) {
         nodes.push(textNode)
       }
@@ -36,6 +39,7 @@ class ReadingReferenceChild extends MarkdownRenderChild {
   private decorateTextNode(textNode: Text): void {
     const references = scanBibleReferences(textNode.data, {
       excludeMarkdown: false,
+      ...this.controller.scanOptions(),
     })
     const occurrences = references
       .flatMap((reference) => reference.occurrences)

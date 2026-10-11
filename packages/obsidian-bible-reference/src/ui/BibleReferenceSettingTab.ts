@@ -209,6 +209,20 @@ Obsidian Bible Reference  is proudly powered by
       )
 
     new Setting(this.containerEl)
+      .setName('Detect chapter-only references')
+      .setDesc(
+        'Preview references without a verse, such as "Ps 82", as the whole chapter. Names that are also common words, such as "Dan" or "Mark", need another reference in the same paragraph.'
+      )
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.detectChapterOnlyReferences ?? true)
+          .onChange(async (value) => {
+            this.plugin.settings.detectChapterOnlyReferences = value
+            await this.plugin.saveSettings()
+          })
+      )
+
+    new Setting(this.containerEl)
       .setName('Embedded widget style')
       .setDesc(
         'Choose the collapsed container inserted from a reference preview.'

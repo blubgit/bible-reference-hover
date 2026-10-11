@@ -78,6 +78,7 @@ export interface BibleReferencePluginSettings {
   hoverPreviewTranslation?: string
   hoverPreviewInReadingView?: boolean
   hoverPreviewInLivePreview?: boolean
+  detectChapterOnlyReferences?: boolean
   embeddedWidgetStyle?: EmbeddedBibleWidgetStyle
   embeddedWidgetInitiallyCollapsed?: boolean
 }
@@ -116,6 +117,7 @@ export const DEFAULT_SETTINGS: BibleReferencePluginSettings = {
   hoverPreviewTranslation: 'esv',
   hoverPreviewInReadingView: true,
   hoverPreviewInLivePreview: true,
+  detectChapterOnlyReferences: true,
   embeddedWidgetStyle: 'bible-callout',
   embeddedWidgetInitiallyCollapsed: true,
 }

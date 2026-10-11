@@ -1,5 +1,17 @@
 import { getBibleVersion } from '../data/BibleVersionCollection'
-import { getFullBookName, isKnownBookName } from './bookNameReference'
+import {
+  getFullBookName,
+  isKnownBookName,
+  resolveBookName,
+} from './bookNameReference'
+import {
+  CHAPTER_ONLY_TAIL_REG,
+  expandChapterOnlyTail,
+  isAmbiguousBookName,
+  paragraphIndexer,
+  startsLowercase,
+} from './chapterOnlyReferences'
+import { getExcludedRanges } from './markdownExclusions'
 import {
   BOOK_REG,
   DASH_CHARS,
@@ -40,6 +52,12 @@ const REFERENCE_TAIL_REG = new RegExp(
   'iu'
 )
 const CHAPTER_VERSE_START_REG = new RegExp(CHAPTER_VERSE, 'giu')
+// A bare chapter or chapter range right after a word: "Ps 82", "Gen 1-3".
+// It must not continue into a verse, letters, digits or another dash.
+const CHAPTER_ONLY_START_REG = new RegExp(
+  `(?<=[\\p{L}\\p{M}.]${INLINE_SPACE})\\d{1,3}(?:${INLINE_SPACE}[${DASH_CLASS}]${INLINE_SPACE}\\d{1,3})?(?![\\p{L}\\d${DASH_CLASS}]|${INLINE_SPACE}[:.]${INLINE_SPACE}\\d)(?:${INLINE_SPACE}@([a-z][a-z0-9-]*))?`,
+  'giu'
+)
 const BOOK_SHAPE_REG =
   /^(?:[1-5]\.?\s*)?(?:[\p{L}\p{M}]+\.?)(?:\s+[\p{L}\p{M}]+\.?){0,5}$/u
 
@@ -48,50 +66,6 @@ const overlaps = (
   end: number,
   excluded: Array<{ start: number; end: number }>
 ): boolean => excluded.some((range) => start < range.end && end > range.start)
-
-const collectMatches = (
-  text: string,
-  reg: RegExp,
-  ranges: Array<{ start: number; end: number }>
-): void => {
-  reg.lastIndex = 0
-  let match: RegExpExecArray | null
-  while ((match = reg.exec(text)) !== null) {
-    ranges.push({ start: match.index, end: match.index + match[0].length })
-    if (match[0].length === 0) reg.lastIndex++
-  }
-}
-
-/** Markdown regions in which prose references must not be discovered. */
-const getExcludedRanges = (
-  text: string
-): Array<{ start: number; end: number }> => {
-  const ranges: Array<{ start: number; end: number }> = []
-  // YAML frontmatter can appear only at the beginning of a note. A global
-  // delimiter-pair match also treats later horizontal rules as frontmatter,
-  // which can hide all references between two ordinary `---` lines.
-  if (text.startsWith('---\n') || text.startsWith('---\r\n')) {
-    const frontmatter = text.match(/^---\s*$[\s\S]*?^---\s*$/mu)
-    if (frontmatter) {
-      ranges.push({ start: 0, end: frontmatter[0].length })
-    }
-  }
-  collectMatches(text, /^(```|~~~)[^\n]*$[\s\S]*?^\1\s*$/gmu, ranges)
-  collectMatches(text, /`+[^`\n]*`+/gu, ranges)
-  collectMatches(text, /https?:\/\/[^\s<>)]+/giu, ranges)
-  collectMatches(
-    text,
-    /<details\s+class=["']obr-bible-widget["'][^>]*>[\s\S]*?<\/details>/giu,
-    ranges
-  )
-  collectMatches(text, /<[^>]*>/gu, ranges)
-  collectMatches(
-    text,
-    /^>\s*\[!(?:bible|quote)\][^\n]*(?:\n>[^\n]*)*/gimu,
-    ranges
-  )
-  return ranges
-}
 
 const locateBook = (
   text: string,
@@ -139,10 +113,31 @@ const canonicalize = (
   const canonicalInput = normalizeChapterVerseSeparators(
     normalizeDashes(rawReference)
   ).trim()
+  const normalizedTranslation = translationKey?.toLowerCase()
+  const bookMatch = canonicalInput.match(BOOK_REG)
+  const chapterOnly = bookMatch
+    ? canonicalInput
+        .slice((bookMatch.index ?? 0) + bookMatch[0].length)
+        .trim()
+        .match(CHAPTER_ONLY_TAIL_REG)
+    : null
+  if (bookMatch && chapterOnly) {
+    // Keep the reference as written for display and note updates; only the
+    // provider query spells out the verses.
+    const fullBookName = getFullBookName(resolveBookName(bookMatch[0]))
+    const first = Number(chapterOnly[1])
+    const last = Number(chapterOnly[2] ?? chapterOnly[1])
+    const tail = first === last ? `${first}` : `${first}–${last}`
+    return {
+      query: `${fullBookName} ${expandChapterOnlyTail(fullBookName, first, last)}`,
+      normalized: `${fullBookName} ${tail}${normalizedTranslation ? `@${normalizedTranslation}` : ''}`,
+      translationKey: normalizedTranslation,
+    }
+  }
+
   const parsed = splitBibleReference(canonicalInput)
   const fullBookName = getFullBookName(parsed.bookName)
   const fullReference: VerseReference = { ...parsed, bookName: fullBookName }
-  const bookMatch = canonicalInput.match(BOOK_REG)
   const rawTail = bookMatch
     ? canonicalInput.slice((bookMatch.index ?? 0) + bookMatch[0].length).trim()
     : getReferenceHead(fullReference).slice(parsed.bookName.length).trim()
@@ -153,7 +148,6 @@ const canonicalize = (
     .trim()
   const query = `${fullBookName} ${normalizedTail}`
   const display = query.replace(/(\d)-(?=\d)/gu, '$1–')
-  const normalizedTranslation = translationKey?.toLowerCase()
   return {
     query,
     normalized: `${display}${normalizedTranslation ? `@${normalizedTranslation}` : ''}`,
@@ -161,21 +155,41 @@ const canonicalize = (
   }
 }
 
-/**
- * Discover, validate, normalize and deduplicate Bible references in prose.
- * References are returned in first-occurrence order while retaining every
- * source occurrence for safe source updates.
- */
-export const scanBibleReferences = (
-  text: string,
-  options: { excludeMarkdown?: boolean } = { excludeMarkdown: true }
-): ScannedBibleReference[] => {
-  const excluded =
-    options.excludeMarkdown === false ? [] : getExcludedRanges(text)
-  const references: ScannedBibleReference[] = []
-  const byKey = new Map<string, ScannedBibleReference>()
-  CHAPTER_VERSE_START_REG.lastIndex = 0
+interface FoundReference {
+  canonical: Omit<ScannedBibleReference, 'occurrences'>
+  occurrence: ReferenceOccurrence
+}
 
+const isUnknownTranslation = (translationKey?: string): boolean =>
+  !!translationKey && getBibleVersion(translationKey).key !== translationKey
+
+const toFoundReference = (
+  text: string,
+  start: number,
+  end: number,
+  translationKey?: string
+): FoundReference | null => {
+  const raw = text.slice(start, end)
+  const referenceWithoutTranslation = translationKey
+    ? raw.slice(0, raw.lastIndexOf('@')).trimEnd()
+    : raw
+  try {
+    return {
+      canonical: canonicalize(referenceWithoutTranslation, translationKey),
+      occurrence: { raw, start, end },
+    }
+  } catch {
+    // Candidate shape matched, but chapter/verse metadata rejected it.
+    return null
+  }
+}
+
+const findVerseReferences = (
+  text: string,
+  excluded: Array<{ start: number; end: number }>
+): FoundReference[] => {
+  const found: FoundReference[] = []
+  CHAPTER_VERSE_START_REG.lastIndex = 0
   let chapterMatch: RegExpExecArray | null
   while ((chapterMatch = CHAPTER_VERSE_START_REG.exec(text)) !== null) {
     const chapterStart = chapterMatch.index
@@ -185,42 +199,95 @@ export const scanBibleReferences = (
     const tail = text.slice(chapterStart).match(REFERENCE_TAIL_REG)
     if (!tail) continue
     const translationKey = tail[1]?.toLowerCase()
-    if (
-      translationKey &&
-      getBibleVersion(translationKey).key !== translationKey
-    ) {
-      continue
-    }
+    if (isUnknownTranslation(translationKey)) continue
 
     const end = chapterStart + tail[0].length
     if (/^\.\d/u.test(text.slice(end))) continue
     if (overlaps(book.start, end, excluded)) continue
-    const raw = text.slice(book.start, end)
-    const referenceWithoutTranslation = translationKey
-      ? raw.slice(0, raw.lastIndexOf('@')).trimEnd()
-      : raw
+    const reference = toFoundReference(text, book.start, end, translationKey)
+    if (!reference) continue
+    found.push(reference)
+    CHAPTER_VERSE_START_REG.lastIndex = end
+  }
+  return found
+}
 
-    try {
-      const canonical = canonicalize(
-        referenceWithoutTranslation,
-        translationKey
-      )
-      const occurrence = { raw, start: book.start, end }
-      const key = canonical.normalized.toLocaleLowerCase()
-      const existing = byKey.get(key)
-      if (existing) {
-        existing.occurrences.push(occurrence)
-      } else {
-        const scanned = { ...canonical, occurrences: [occurrence] }
-        byKey.set(key, scanned)
-        references.push(scanned)
-      }
-      CHAPTER_VERSE_START_REG.lastIndex = end
-    } catch {
-      // Candidate shape matched, but chapter/verse metadata rejected it.
-    }
+/**
+ * Finds "Ps 82" or "Gen 1-3". A book name that is also an everyday word
+ * ("Dan 7", "Mark 5") only counts when another reference shares its paragraph.
+ */
+const findChapterOnlyReferences = (
+  text: string,
+  excluded: Array<{ start: number; end: number }>,
+  verseReferences: FoundReference[]
+): FoundReference[] => {
+  const occupied = verseReferences.map((reference) => reference.occurrence)
+  const candidates: Array<FoundReference & { ambiguous: boolean }> = []
+  CHAPTER_ONLY_START_REG.lastIndex = 0
+  let match: RegExpExecArray | null
+  while ((match = CHAPTER_ONLY_START_REG.exec(text)) !== null) {
+    const end = match.index + match[0].length
+    const book = locateBook(text, match.index)
+    if (!book || startsLowercase(book.bookName)) continue
+    const translationKey = match[1]?.toLowerCase()
+    if (isUnknownTranslation(translationKey)) continue
+    if (overlaps(book.start, end, excluded)) continue
+    if (overlaps(book.start, end, occupied)) continue
+    const reference = toFoundReference(text, book.start, end, translationKey)
+    if (!reference) continue
+    candidates.push({
+      ...reference,
+      ambiguous: isAmbiguousBookName(book.bookName),
+    })
+  }
+  if (!candidates.some((candidate) => candidate.ambiguous)) return candidates
+
+  const paragraphOf = paragraphIndexer(text)
+  const anchored = new Set(
+    [...verseReferences, ...candidates.filter((c) => !c.ambiguous)].map(
+      (reference) => paragraphOf(reference.occurrence.start)
+    )
+  )
+  return candidates.filter(
+    (candidate) =>
+      !candidate.ambiguous ||
+      anchored.has(paragraphOf(candidate.occurrence.start))
+  )
+}
+
+/**
+ * Discover, validate, normalize and deduplicate Bible references in prose.
+ * References are returned in first-occurrence order while retaining every
+ * source occurrence for safe source updates. With `chapterOnly`, references
+ * without a verse ("Ps 82") are found too.
+ */
+export const scanBibleReferences = (
+  text: string,
+  options: { excludeMarkdown?: boolean; chapterOnly?: boolean } = {
+    excludeMarkdown: true,
+  }
+): ScannedBibleReference[] => {
+  const excluded =
+    options.excludeMarkdown === false ? [] : getExcludedRanges(text)
+  const found = findVerseReferences(text, excluded)
+  if (options.chapterOnly) {
+    found.push(...findChapterOnlyReferences(text, excluded, found))
+    found.sort((a, b) => a.occurrence.start - b.occurrence.start)
   }
 
+  const references: ScannedBibleReference[] = []
+  const byKey = new Map<string, ScannedBibleReference>()
+  found.forEach(({ canonical, occurrence }) => {
+    const key = canonical.normalized.toLocaleLowerCase()
+    const existing = byKey.get(key)
+    if (existing) {
+      existing.occurrences.push(occurrence)
+    } else {
+      const scanned = { ...canonical, occurrences: [occurrence] }
+      byKey.set(key, scanned)
+      references.push(scanned)
+    }
+  })
   return references
 }
 

@@ -28,6 +28,14 @@ Plugin to help users access and reference Bible verses in Obsidian. All decision
 - Split files exceeding ~250 lines. One responsibility per file.
 - No Node/Electron APIs unless `isDesktopOnly: true`.
 
+## Verifying a change
+
+Run from the repo root before committing (details in [Dev setup](docs/dev-setup.md#verifying-a-change)):
+
+1. `bun run test` — builds the helper packages, then runs every test. Add or update a `*.test.ts` beside the code you change.
+2. `bun run build` — type-checks and bundles `main.js` for a manual check in Obsidian.
+3. Commit. The pre-commit hook runs `bun run precommit` (ESLint + Prettier over the whole repo); fix what it reports rather than skipping it with `--no-verify`.
+
 ## Mobile
 
 - Test on iOS and Android where feasible.

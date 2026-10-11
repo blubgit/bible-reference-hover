@@ -33,7 +33,7 @@ export class BibleReferenceController implements HoverParent {
     point?: Point,
     waitTime = this.plugin.settings.hoverPreviewDelayMs ?? 300
   ): void {
-    const references = scanBibleReferences(source.text)
+    const references = scanBibleReferences(source.text, this.scanOptions())
     if (references.length === 0) return
     this.dismissPopovers()
     const popover = new BibleReferencePopover(
@@ -57,7 +57,7 @@ export class BibleReferenceController implements HoverParent {
 
   public openEditorSelection(editor: Editor, point?: Point): void {
     const text = editor.getSelection()
-    const references = scanBibleReferences(text)
+    const references = scanBibleReferences(text, this.scanOptions())
     if (references.length === 0) {
       new Notice('No Bible references found in the selection.')
       return
@@ -95,6 +95,12 @@ export class BibleReferenceController implements HoverParent {
         content
       )
     )
+  }
+
+  public scanOptions(): { chapterOnly: boolean } {
+    return {
+      chapterOnly: this.plugin.settings.detectChapterOnlyReferences ?? true,
+    }
   }
 
   public close(): void {

@@ -246,7 +246,9 @@ export class BibleReferencePopover extends HoverPopover {
         )
         return
       }
-      this.references = scanBibleReferences(nextSource)
+      this.references = scanBibleReferences(nextSource, {
+        chapterOnly: this.getSettings().detectChapterOnlyReferences ?? true,
+      })
     } else {
       this.references = nextReferences
     }

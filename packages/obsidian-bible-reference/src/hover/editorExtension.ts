@@ -14,12 +14,13 @@ import { CodeMirrorSourceTarget } from './SourceTarget'
 
 const buildDecorations = (
   view: EditorView,
-  enabled: boolean
+  enabled: boolean,
+  chapterOnly: boolean
 ): DecorationSet => {
   if (!enabled) return Decoration.none
   const source = view.state.doc.toString()
   const builder = new RangeSetBuilder<Decoration>()
-  const occurrences = scanBibleReferences(source)
+  const occurrences = scanBibleReferences(source, { chapterOnly })
     .flatMap((reference) => reference.occurrences)
     .sort((a, b) => a.start - b.start)
   occurrences.forEach((occurrence) => {
@@ -65,7 +66,8 @@ export const createBibleReferenceEditorExtension = (
         this.decorations = buildDecorations(
           view,
           !!plugin.settings.enableHoverPreviews &&
-            !!plugin.settings.hoverPreviewInLivePreview
+            !!plugin.settings.hoverPreviewInLivePreview,
+          plugin.settings.detectChapterOnlyReferences ?? true
         )
       }
 
@@ -74,7 +76,8 @@ export const createBibleReferenceEditorExtension = (
           this.decorations = buildDecorations(
             update.view,
             !!plugin.settings.enableHoverPreviews &&
-              !!plugin.settings.hoverPreviewInLivePreview
+              !!plugin.settings.hoverPreviewInLivePreview,
+            plugin.settings.detectChapterOnlyReferences ?? true
           )
         }
       }
