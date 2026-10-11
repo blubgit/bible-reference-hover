@@ -1,0 +1,467 @@
+import { BaseVerseFormatter } from './BaseVerseFormatter'
+import {
+  BibleReferencePluginSettings,
+  DEFAULT_SETTINGS,
+} from '../data/constants'
+import { VerseReference } from '../utils/splitBibleReference'
+import { BibleVerseFormat } from '../data/BibleVerseFormat'
+import { BibleVerseNumberFormat } from '../data/BibleVerseNumberFormat'
+import { BibleVerseSegmentSeparatorFormat } from '../data/BibleVerseSegmentSeparatorFormat'
+import { IVerse } from '../interfaces/IVerse'
+import { BibleVerseReferenceLinkPosition } from '../data/BibleVerseReferenceLinkPosition'
+
+class MockFormatter extends BaseVerseFormatter {
+  constructor(
+    settings: BibleReferencePluginSettings,
+    verseReference: VerseReference,
+    verses: IVerse[]
+  ) {
+    super(settings, verseReference)
+    this.verses = verses
+  }
+  protected getVerseReferenceLink(): string {
+    return 'link'
+  }
+}
+
+describe('BaseVerseFormatter', () => {
+  it('should add separators for chapter changes in list mode (default: with chapter number)', () => {
+    const settings = {
+      ...DEFAULT_SETTINGS,
+      verseFormatting: BibleVerseFormat.SingleLine,
+      verseNumberFormatting: BibleVerseNumberFormat.Period,
+      showChapterNumberInSeparator: true,
+    }
+    const verseReference: VerseReference = {
+      bookName: 'John',
+      chapterNumber: 3,
+      verseNumber: 36,
+      ranges: [{ chapterNumber: 3, verseNumber: 36 }],
+    }
+    const verses = [
+      {
+        book_id: 'John',
+        book_name: 'John',
+        chapter: 3,
+        verse: 36,
+        text: 'v36',
+      },
+      { book_id: 'John', book_name: 'John', chapter: 4, verse: 1, text: 'v1' },
+    ]
+    const formatter = new MockFormatter(settings, verseReference, verses)
+    const expected = '> 36. v36\n>\n> ---\n> 4\n> ---\n> 1. v1'
+    expect(formatter.bodyContent).toBe(expected)
+  })
+
+  it('should add separators for chapter changes in list mode without chapter number when disabled', () => {
+    const settings = {
+      ...DEFAULT_SETTINGS,
+      verseFormatting: BibleVerseFormat.SingleLine,
+      verseNumberFormatting: BibleVerseNumberFormat.Period,
+      showChapterNumberInSeparator: false,
+    }
+    const verseReference: VerseReference = {
+      bookName: 'John',
+      chapterNumber: 3,
+      verseNumber: 36,
+      ranges: [{ chapterNumber: 3, verseNumber: 36 }],
+    }
+    const verses = [
+      {
+        book_id: 'John',
+        book_name: 'John',
+        chapter: 3,
+        verse: 36,
+        text: 'v36',
+      },
+      { book_id: 'John', book_name: 'John', chapter: 4, verse: 1, text: 'v1' },
+    ]
+    const formatter = new MockFormatter(settings, verseReference, verses)
+    const expected = '> 36. v36\n>\n> ---\n> 1. v1'
+    expect(formatter.bodyContent).toBe(expected)
+  })
+
+  it('should add separators with chapter number in paragraph mode', () => {
+    const settings = {
+      ...DEFAULT_SETTINGS,
+      verseFormatting: BibleVerseFormat.Paragraph,
+      verseNumberFormatting: BibleVerseNumberFormat.Period,
+      showChapterNumberInSeparator: true,
+    }
+    const verseReference: VerseReference = {
+      bookName: 'John',
+      chapterNumber: 3,
+      verseNumber: 5,
+      ranges: [{ chapterNumber: 3, verseNumber: 5 }],
+    }
+    const verses = [
+      { book_id: 'John', book_name: 'John', chapter: 3, verse: 5, text: 'v5' },
+      { book_id: 'John', book_name: 'John', chapter: 4, verse: 1, text: 'v1' },
+    ]
+    const formatter = new MockFormatter(settings, verseReference, verses)
+    const expected = '> 5. v5\n>\n> ---\n> 4\n> ---\n> 1. v1'
+    expect(formatter.bodyContent).toBe(expected)
+  })
+
+  it('should add separators for verse gaps in same chapter (Single Line)', () => {
+    const settings = {
+      ...DEFAULT_SETTINGS,
+      verseFormatting: BibleVerseFormat.SingleLine,
+      verseNumberFormatting: BibleVerseNumberFormat.Period,
+      verseSegmentSeparatorFormat:
+        BibleVerseSegmentSeparatorFormat.VerseSeparator,
+    }
+    const verseReference: VerseReference = {
+      bookName: 'John',
+      chapterNumber: 3,
+      verseNumber: 16,
+      ranges: [{ chapterNumber: 3, verseNumber: 16 }],
+    }
+    const verses = [
+      {
+        book_id: 'John',
+        book_name: 'John',
+        chapter: 3,
+        verse: 16,
+        text: 'v16',
+      },
+      {
+        book_id: 'John',
+        book_name: 'John',
+        chapter: 3,
+        verse: 19,
+        text: 'v19',
+      },
+    ]
+    const formatter = new MockFormatter(settings, verseReference, verses)
+    const expected = '> 16. v16\n>\n> ---\n> 19. v19'
+    expect(formatter.bodyContent).toBe(expected)
+  })
+
+  it('should add separators for verse gaps in same chapter (Paragraph)', () => {
+    const settings = {
+      ...DEFAULT_SETTINGS,
+      verseFormatting: BibleVerseFormat.Paragraph,
+      verseNumberFormatting: BibleVerseNumberFormat.Period,
+      verseSegmentSeparatorFormat:
+        BibleVerseSegmentSeparatorFormat.VerseSeparator,
+    }
+    const verseReference: VerseReference = {
+      bookName: 'John',
+      chapterNumber: 3,
+      verseNumber: 16,
+      ranges: [{ chapterNumber: 3, verseNumber: 16 }],
+    }
+    const verses = [
+      {
+        book_id: 'John',
+        book_name: 'John',
+        chapter: 3,
+        verse: 16,
+        text: 'v16',
+      },
+      {
+        book_id: 'John',
+        book_name: 'John',
+        chapter: 3,
+        verse: 19,
+        text: 'v19',
+      },
+    ]
+    const formatter = new MockFormatter(settings, verseReference, verses)
+    const expected = '> 16. v16\n>\n> ---\n> 19. v19'
+    expect(formatter.bodyContent).toBe(expected)
+  })
+
+  it('should add extra newline when position is Bottom', () => {
+    const settings = {
+      ...DEFAULT_SETTINGS,
+      referenceLinkPosition: BibleVerseReferenceLinkPosition.Bottom,
+    }
+    const verseReference: VerseReference = {
+      bookName: 'John',
+      chapterNumber: 3,
+      verseNumber: 16,
+      ranges: [{ chapterNumber: 3, verseNumber: 16 }],
+    }
+    const verses = [
+      {
+        book_id: 'John',
+        book_name: 'John',
+        chapter: 3,
+        verse: 16,
+        text: 'v16',
+      },
+    ]
+    const formatter = new MockFormatter(settings, verseReference, verses)
+    expect(formatter.allFormattedContent.endsWith('\n')).toBe(true)
+    expect(formatter.allFormattedContent.endsWith('\n\n')).toBe(false)
+  })
+
+  it('should NOT add extra newline when position is Header', () => {
+    const settings = {
+      ...DEFAULT_SETTINGS,
+      referenceLinkPosition: BibleVerseReferenceLinkPosition.Header,
+    }
+    const verseReference: VerseReference = {
+      bookName: 'John',
+      chapterNumber: 3,
+      verseNumber: 16,
+      ranges: [{ chapterNumber: 3, verseNumber: 16 }],
+    }
+    const verses = [
+      {
+        book_id: 'John',
+        book_name: 'John',
+        chapter: 3,
+        verse: 16,
+        text: 'v16',
+      },
+    ]
+    const formatter = new MockFormatter(settings, verseReference, verses)
+    expect(formatter.allFormattedContent.endsWith('\n')).toBe(false)
+  })
+
+  it('should add extra newline when position is Both', () => {
+    const settings = {
+      ...DEFAULT_SETTINGS,
+      referenceLinkPosition: BibleVerseReferenceLinkPosition.AllAbove,
+    }
+    const verseReference: VerseReference = {
+      bookName: 'John',
+      chapterNumber: 3,
+      verseNumber: 16,
+      ranges: [{ chapterNumber: 3, verseNumber: 16 }],
+    }
+    const verses = [
+      {
+        book_id: 'John',
+        book_name: 'John',
+        chapter: 3,
+        verse: 16,
+        text: 'v16',
+      },
+    ]
+    const formatter = new MockFormatter(settings, verseReference, verses)
+    expect(formatter.allFormattedContent.endsWith('\n')).toBe(true)
+    expect(formatter.allFormattedContent.endsWith('\n\n')).toBe(false)
+  })
+
+  it('should not add book tag when bookTagging setting is false', () => {
+    const settings = {
+      ...DEFAULT_SETTINGS,
+      bookTagging: false,
+      bookTaggingFormat: '{{book}}',
+    }
+    const verseReference: VerseReference = {
+      bookName: 'John',
+      chapterNumber: 3,
+      verseNumber: 16,
+      ranges: [{ chapterNumber: 3, verseNumber: 16 }],
+    }
+    const verses = [
+      {
+        book_id: 'John',
+        book_name: 'John',
+        chapter: 3,
+        verse: 16,
+        text: 'v16',
+      },
+    ]
+    const formatter = new MockFormatter(settings, verseReference, verses)
+    expect(formatter.allFormattedContent).not.toContain('#John')
+  })
+  it('should not add chapter tag when chapterTagging setting is false', () => {
+    const settings = {
+      ...DEFAULT_SETTINGS,
+      chapterTagging: false,
+      chapterTaggingFormat: '{{book}}{{chapter}}',
+    }
+    const verseReference: VerseReference = {
+      bookName: 'John',
+      chapterNumber: 3,
+      verseNumber: 16,
+      ranges: [{ chapterNumber: 3, verseNumber: 16 }],
+    }
+    const verses = [
+      {
+        book_id: 'John',
+        book_name: 'John',
+        chapter: 3,
+        verse: 16,
+        text: 'v16',
+      },
+    ]
+    const formatter = new MockFormatter(settings, verseReference, verses)
+    expect(formatter.allFormattedContent).not.toContain('#John3')
+  })
+  it('should add book tag when bookTagging setting is true', () => {
+    const settings = {
+      ...DEFAULT_SETTINGS,
+      bookTagging: true,
+      bookTaggingFormat: '{{book}}',
+    }
+    const verseReference: VerseReference = {
+      bookName: 'John',
+      chapterNumber: 3,
+      verseNumber: 16,
+      ranges: [{ chapterNumber: 3, verseNumber: 16 }],
+    }
+    const verses = [
+      {
+        book_id: 'John',
+        book_name: 'John',
+        chapter: 3,
+        verse: 16,
+        text: 'v16',
+      },
+    ]
+    const formatter = new MockFormatter(settings, verseReference, verses)
+    expect(formatter.allFormattedContent).toContain('#John')
+  })
+  it('should add chapter tag when chapterTagging setting is true', () => {
+    const settings = {
+      ...DEFAULT_SETTINGS,
+      chapterTagging: true,
+      chapterTaggingFormat: '{{book}}{{chapter}}',
+    }
+    const verseReference: VerseReference = {
+      bookName: 'John',
+      chapterNumber: 3,
+      verseNumber: 16,
+      ranges: [{ chapterNumber: 3, verseNumber: 16 }],
+    }
+    const verses = [
+      {
+        book_id: 'John',
+        book_name: 'John',
+        chapter: 3,
+        verse: 16,
+        text: 'v16',
+      },
+    ]
+    const formatter = new MockFormatter(settings, verseReference, verses)
+    expect(formatter.allFormattedContent).toContain('#John3')
+  })
+  it('should separate book and chapter tags by spaces', () => {
+    const settings = {
+      ...DEFAULT_SETTINGS,
+      bookTagging: true,
+      bookTaggingFormat: '{{book}}',
+      chapterTagging: true,
+      chapterTaggingFormat: '{{book}}{{chapter}}',
+    }
+    const verseReference: VerseReference = {
+      bookName: 'John',
+      chapterNumber: 3,
+      verseNumber: 16,
+      ranges: [{ chapterNumber: 3, verseNumber: 16 }],
+    }
+    const verses = [
+      {
+        book_id: 'John',
+        book_name: 'John',
+        chapter: 3,
+        verse: 16,
+        text: 'v16',
+      },
+    ]
+    const formatter = new MockFormatter(settings, verseReference, verses)
+    expect(formatter.allFormattedContent.endsWith('%% #John #John3 %%')).toBe(
+      true
+    )
+  })
+  it('should add multiple chapter tags for cross-chapter reference (e.g. James 1:1-2:1)', () => {
+    const settings = {
+      ...DEFAULT_SETTINGS,
+      chapterTagging: true,
+      chapterTaggingFormat: '{{book}}{{chapter}}',
+    }
+    const verseReference: VerseReference = {
+      bookName: 'James',
+      chapterNumber: 1,
+      verseNumber: 1,
+      chapterNumberEnd: 2,
+      verseNumberEndChapter: 1,
+      ranges: [
+        {
+          chapterNumber: 1,
+          verseNumber: 1,
+          chapterNumberEnd: 2,
+          verseNumberEndChapter: 1,
+        },
+      ],
+    }
+    const verses = [
+      {
+        book_id: 'James',
+        book_name: 'James',
+        chapter: 1,
+        verse: 1,
+        text: 'v1',
+      },
+      {
+        book_id: 'James',
+        book_name: 'James',
+        chapter: 2,
+        verse: 1,
+        text: 'v2',
+      },
+    ]
+    const formatter = new MockFormatter(settings, verseReference, verses)
+    expect(formatter.allFormattedContent).toContain('#James1')
+    expect(formatter.allFormattedContent).toContain('#James2')
+  })
+  it('should add multiple chapter tags including book tag for cross-chapter reference', () => {
+    const settings = {
+      ...DEFAULT_SETTINGS,
+      bookTagging: true,
+      bookTaggingFormat: '{{book}}',
+      chapterTagging: true,
+      chapterTaggingFormat: '{{book}}{{chapter}}',
+    }
+    const verseReference: VerseReference = {
+      bookName: 'Hebrews',
+      chapterNumber: 9,
+      verseNumber: 1,
+      chapterNumberEnd: 11,
+      verseNumberEndChapter: 3,
+      ranges: [
+        {
+          chapterNumber: 9,
+          verseNumber: 1,
+          chapterNumberEnd: 11,
+          verseNumberEndChapter: 3,
+        },
+      ],
+    }
+    const verses = [
+      {
+        book_id: 'Hebrews',
+        book_name: 'Hebrews',
+        chapter: 9,
+        verse: 1,
+        text: 'a',
+      },
+      {
+        book_id: 'Hebrews',
+        book_name: 'Hebrews',
+        chapter: 10,
+        verse: 1,
+        text: 'b',
+      },
+      {
+        book_id: 'Hebrews',
+        book_name: 'Hebrews',
+        chapter: 11,
+        verse: 3,
+        text: 'c',
+      },
+    ]
+    const formatter = new MockFormatter(settings, verseReference, verses)
+    expect(formatter.allFormattedContent).toContain('#Hebrews')
+    expect(formatter.allFormattedContent).toContain('#Hebrews9')
+    expect(formatter.allFormattedContent).toContain('#Hebrews10')
+    expect(formatter.allFormattedContent).toContain('#Hebrews11')
+  })
+})

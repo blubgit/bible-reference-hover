@@ -1,0 +1,27 @@
+name: "Lint and Build"
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4.2.2
+      - name: Checkout submodules
+        run: git submodule update --init --recursive
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - run: bun install --frozen-lockfile
+      - run: bun run lint
+      - run: bun run prettier
+      # Build before test: the plugin and its tests import bible-reference-toolkit,
+      # which resolves to its built dist/ (gitignored).
+      - run: bun run build
+      - run: bun test

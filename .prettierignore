@@ -1,0 +1,24 @@
+# Ignore artifacts:
+build
+dist
+coverage
+*.js
+*.mjs
+docs
+node_modules
+.github
+.eslintrc
+.prettierrc
+pnpm-lock.yaml
+tsconfig.json
+versions.json
+data.json
+manifest.json
+**/src/data/offlineBible.web.json
+biblejs-name-converter/
+.all-contributorsrc
+.npmrc
+.claude/
+.agents/
+Plans.md
+plans.json

@@ -1,0 +1,58 @@
+
+# npm
+node_modules
+package-lock.json
+
+# build
+main.js
+*.map
+
+# obsidian
+data.json
+**/data.json
+*.pem
+*.key
+*.token
+secrets.*
+
+# local env (Bun auto-loads .env; holds OUT_DIR for hot-dev)
+.env
+.env.local
+.env.*.local
+.env*
+/coverage/lcov-report/
+/coverage/
+
+# Exclude macOS Finder (System Explorer) View States
+.DS_Store
+.eslintignore
+.stignore
+/dist/
+packages/*/dist/
+
+#pnpm
+.claude/sessions
+.claude/stats
+.claude/settings.local.json
+!.claude/skills
+
+# ---- Harness managed begin ----
+# Claude Code / Harness runtime files
+.claude/sessions/
+.claude/logs/
+.claude/state/
+.claude/worktrees/
+.claude/settings.local.json
+
+
+# Force-track Harness configuration (do not ignore these)
+!.claude/memory/
+!.claude/output-styles/
+!.claude/rules/
+!.claude/scripts/
+!.claude/skills/
+!.claude/settings.json
+# ---- Harness managed end ----
+.pytest_cache/
+.idea/
+.vscode/

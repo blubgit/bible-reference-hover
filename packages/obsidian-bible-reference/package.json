@@ -1,0 +1,40 @@
+{
+  "name": "bible-reference-hover",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Preview, edit, and embed Bible passages from references in surrounding text.",
+  "main": "../../main.js",
+  "scripts": {
+    "dev": "bun scripts/esbuild.config.mjs",
+    "build": "tsc -noEmit -skipLibCheck && bun scripts/esbuild.config.mjs production",
+    "version": "bun scripts/version-bump.mjs",
+    "test": "bun test"
+  },
+  "keywords": [
+    "bible",
+    "bible reference",
+    "bible notes",
+    "bible study",
+    "theology study",
+    "obsidian",
+    "obsidian.md",
+    "obsidian plugin",
+    "obsidian bible"
+  ],
+  "author": "blubgit",
+  "license": "MIT",
+  "devDependencies": {
+    "@codemirror/state": "6.7.1",
+    "@codemirror/view": "6.43.6",
+    "@types/node": "24.3.0",
+    "builtin-modules": "3.3.0",
+    "bun-types": "^1.1.0",
+    "esbuild": "0.28.1",
+    "obsidian": "1.8.7",
+    "tslib": "^2.8.1",
+    "typescript": "5.3.3"
+  },
+  "dependencies": {
+    "bible-reference-toolkit": "workspace:*"
+  }
+}
