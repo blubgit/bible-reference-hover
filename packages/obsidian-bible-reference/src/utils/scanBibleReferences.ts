@@ -184,6 +184,27 @@ const toFoundReference = (
   }
 }
 
+/**
+ * A list item after "," or ";" may be the ordinal of the next reference's book
+ * rather than a verse: in "Col 4:5-6; 1 Thess 4:11" the "1" belongs to
+ * "1 Thess". Returns the tail length with such an ordinal and its separator
+ * dropped, so the two references never overlap.
+ */
+const trimOrdinalOfNextBook = (
+  text: string,
+  tailStart: number,
+  tail: string
+): number => {
+  const ordinal = tail.match(/[,;][^\S\r\n]*([1-5])$/u)
+  if (!ordinal) return tail.length
+  const nextWord = text
+    .slice(tailStart + tail.length)
+    .match(/^\.?[^\S\r\n]*([\p{L}\p{M}]+)/u)?.[1]
+  return nextWord && isKnownBookName(`${ordinal[1]} ${nextWord}`)
+    ? (ordinal.index ?? tail.length)
+    : tail.length
+}
+
 const findVerseReferences = (
   text: string,
   excluded: Array<{ start: number; end: number }>
@@ -201,7 +222,8 @@ const findVerseReferences = (
     const translationKey = tail[1]?.toLowerCase()
     if (isUnknownTranslation(translationKey)) continue
 
-    const end = chapterStart + tail[0].length
+    const end =
+      chapterStart + trimOrdinalOfNextBook(text, chapterStart, tail[0])
     if (/^\.\d/u.test(text.slice(end))) continue
     if (overlaps(book.start, end, excluded)) continue
     const reference = toFoundReference(text, book.start, end, translationKey)

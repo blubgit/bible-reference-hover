@@ -157,3 +157,37 @@ describe('chapter-only references', () => {
     })
   })
 })
+
+describe('numbered books after a reference list separator', () => {
+  test.each([
+    [
+      'Col 4:5-6; 1 Thess 4:11-12',
+      ['Colossians 4:5–6', '1 Thessalonians 4:11–12'],
+    ],
+    ['Rom 13:1-7; 1 Tim 2:1-2', ['Romans 13:1–7', '1 Timothy 2:1–2']],
+    ['Phil 4:5; 2 Tim 2:24-26', ['Philippians 4:5', '2 Timothy 2:24–26']],
+    ['John 16:33; 2 Thess 1:5-10', ['John 16:33', '2 Thessalonians 1:5–10']],
+    [
+      'Col 2:15; 2 Cor 10:3-5; 1 Cor 2:6-8',
+      ['Colossians 2:15', '2 Corinthians 10:3–5', '1 Corinthians 2:6–8'],
+    ],
+    ['John 3:16, 1 John 4:8', ['John 3:16', '1 John 4:8']],
+  ])('splits %s', (input, expected) => {
+    const references = scanBibleReferences(input)
+    expect(references.map((reference) => reference.normalized)).toEqual(
+      expected
+    )
+    const occurrences = references
+      .flatMap((reference) => reference.occurrences)
+      .sort((a, b) => a.start - b.start)
+    occurrences.slice(1).forEach((occurrence, index) => {
+      expect(occurrence.start).toBeGreaterThanOrEqual(occurrences[index].end)
+    })
+  })
+
+  test('keeps a trailing verse that is not a book ordinal', () => {
+    expect(scanBibleReferences('John 3:16, 2 and more')[0]?.normalized).toBe(
+      'John 3:16, 2'
+    )
+  })
+})

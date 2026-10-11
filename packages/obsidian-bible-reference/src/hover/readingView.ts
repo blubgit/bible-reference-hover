@@ -2,6 +2,7 @@ import { MarkdownPostProcessorContext, MarkdownRenderChild } from 'obsidian'
 import type BibleReferencePlugin from '../main'
 import { scanBibleReferences } from '../utils/scanBibleReferences'
 import { BibleReferenceController } from './BibleReferenceController'
+import { nonOverlapping } from './nonOverlapping'
 
 const BLOCK_SELECTOR = 'p, h1, h2, h3, h4, h5, h6, li, blockquote'
 const EXCLUDED_SELECTOR =
@@ -33,7 +34,15 @@ class ReadingReferenceChild extends MarkdownRenderChild {
         nodes.push(textNode)
       }
     }
-    nodes.forEach((textNode) => this.decorateTextNode(textNode))
+    nodes.forEach((textNode) => {
+      // Decoration is cosmetic. An error here must never abort rendering:
+      // other renderers, such as PDF exporters, wait on the post-processor.
+      try {
+        this.decorateTextNode(textNode)
+      } catch (error) {
+        console.warn('Bible Reference Hover: skipped a text node', error)
+      }
+    })
   }
 
   private decorateTextNode(textNode: Text): void {
@@ -41,9 +50,10 @@ class ReadingReferenceChild extends MarkdownRenderChild {
       excludeMarkdown: false,
       ...this.controller.scanOptions(),
     })
-    const occurrences = references
-      .flatMap((reference) => reference.occurrences)
-      .sort((a, b) => b.start - a.start)
+    const occurrences = nonOverlapping(
+      references.flatMap((reference) => reference.occurrences),
+      textNode.length
+    ).reverse()
     occurrences.forEach((occurrence) => {
       const match = textNode.splitText(occurrence.start)
       match.splitText(occurrence.end - occurrence.start)
