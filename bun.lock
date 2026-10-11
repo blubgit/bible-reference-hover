@@ -43,7 +43,7 @@
     },
     "packages/obsidian-bible-reference": {
       "name": "bible-reference-hover",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "dependencies": {
         "bible-reference-toolkit": "workspace:*",
       },
