@@ -1,8 +1,12 @@
 # Bible Reference Hover
 
-Hover over a Bible reference in your notes to read the passage, then edit the references or embed the verses without leaving the note.
+Hover over a Bible reference in your notes to read the passage, then edit the references or embed the verses without leaving the note. On a phone or tablet, tap a reference to read just that passage.
 
-Bible Reference Hover is an [Obsidian](https://obsidian.md) plugin. It finds every Bible reference in the paragraph, heading, or list around the one you hover, and shows all of their passages together in one preview.
+Bible Reference Hover is an [Obsidian](https://obsidian.md) plugin. It finds every Bible reference in the paragraph, heading, or list around the one you hover, and shows all of their passages together in one preview, with the option to embed the verses into your note, as shown below.
+
+![Hovering a list of cross-references opens every passage in one preview](docs/hover-preview.png)
+
+_"Scripture quotations are from the ESV® Bible, © 2001 by Crossway."_
 
 ## Features
 
@@ -10,8 +14,15 @@ Bible Reference Hover is an [Obsidian](https://obsidian.md) plugin. It finds eve
 
 - **Hover to preview.** References in your notes get a subtle dotted underline. Hover over one, or move to it with the keyboard, to see the passage.
 - **Every reference in context.** The preview gathers all references in the surrounding paragraph, heading, or whole list, so a list of cross-references opens as one set of passages.
-- **Works everywhere you read.** Live Preview, Reading view, and selected text (right-click a selection, then select **Scan for Bible references**).
+- **Works everywhere you read.** On desktop: Live Preview, Reading view, and selected text (right-click a selection, then select **Scan for Bible references**).
 - **Readable output.** Duplicates are merged, references keep their order in the note, verse listings are grouped under chapter headings, and long passages scroll inside the preview.
+
+### On iPhone, iPad, and Android
+
+- **Tap to read.** Tap an underlined reference to open just that passage in a small window, with the heading, translation, and numbered verses. Close it to return to your note.
+- **Reading view and Live Preview.** Tapping works in both. In Live Preview the cursor still moves to where you tapped, so you can keep editing.
+- **Whole chapters scroll.** A chapter-only reference such as `Ps 82` shows every verse, and long passages scroll inside the window.
+- **Desktop-only extras.** The multi-reference preview with **Edit references** and **Embed verses** is available on desktop, where you can hover.
 
 ### Flexible reference notation
 
@@ -61,20 +72,24 @@ These features come from the original [Bible Reference](https://github.com/tim-h
 
 Install the [BRAT](https://github.com/TfTHacker/obsidian42-brat) plugin, then add the beta plugin `blubgit/bible-reference-hover`.
 
+### On mobile
+
+BRAT works on mobile too. If you install manually on desktop and sync your vault with Obsidian Sync, turn on **Installed community plugins** in **Settings → Sync** so the plugin reaches your phone. Then restart Obsidian there.
+
 > **Using the original Bible Reference plugin too?** Both plugins respond to `--` at the start of a line. Turn one of them off to avoid duplicate suggestions.
 
 ## Settings
 
 Open **Settings → Bible Reference Hover**. Hover-related options:
 
-| Setting                                               | What it does                                                  |
-| ----------------------------------------------------- | ------------------------------------------------------------- |
-| **Enable Bible reference hover previews**             | Turns hover previews on or off.                               |
-| **Hover delay**                                       | How long to hover before the preview opens (0–2000 ms).       |
-| **Default hover translation**                         | Translation used unless a reference ends with `@translation`. |
-| **Reading view previews** / **Live Preview previews** | Choose where references are detected.                         |
-| **Detect chapter-only references**                    | Preview references like `Ps 82` as whole chapters.            |
-| **Embedded widget style** / **Initially collapsed**   | How embedded verses look when inserted.                       |
+| Setting                                               | What it does                                                          |
+| ----------------------------------------------------- | --------------------------------------------------------------------- |
+| **Enable Bible reference hover previews**             | Turns previews on or off, both hover on desktop and tap on mobile.    |
+| **Hover delay**                                       | Desktop only. How long to hover before the preview opens (0–2000 ms). |
+| **Default hover translation**                         | Translation used unless a reference ends with `@translation`.         |
+| **Reading view previews** / **Live Preview previews** | Choose where references are detected, for hover and tap.              |
+| **Detect chapter-only references**                    | Preview references like `Ps 82` as whole chapters.                    |
+| **Embedded widget style** / **Initially collapsed**   | How embedded verses look when inserted.                               |
 
 ## Privacy and network use
 

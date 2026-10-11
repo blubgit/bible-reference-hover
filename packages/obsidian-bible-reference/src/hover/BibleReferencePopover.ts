@@ -1,6 +1,5 @@
 import { HoverParent, HoverPopover, Notice, Point } from 'obsidian'
 import { BibleReferencePluginSettings } from '../data/constants'
-import { OFFLINE_VERSION_KEY } from '../data/BibleVersionCollection'
 import {
   normalizeBibleReference,
   scanBibleReferences,
@@ -8,7 +7,7 @@ import {
 } from '../utils/scanBibleReferences'
 import { BibleReferenceLookup, ReferencePassage } from './BibleReferenceLookup'
 import { buildEmbeddedWidget } from './buildEmbeddedWidget'
-import { groupVersesByChapter } from './groupVersesByChapter'
+import { createPassageSection, renderPassage } from './renderPassage'
 import { SourceTarget } from './SourceTarget'
 
 type PassageState =
@@ -140,21 +139,7 @@ export class BibleReferencePopover extends HoverPopover {
         const section = this.createPassageSection(reference.normalized)
         section.createDiv({ cls: 'obr-reference-error', text: state.message })
       } else {
-        groupVersesByChapter(state.passage.verses).forEach((group) => {
-          const section = this.createPassageSection(group.label)
-          section.createDiv({
-            cls: 'obr-reference-translation',
-            text:
-              state.passage.translationKey === OFFLINE_VERSION_KEY
-                ? 'WEB'
-                : state.passage.translationKey.toUpperCase(),
-          })
-          group.verses.forEach((verse) => {
-            const line = section.createEl('p')
-            line.createEl('strong', { text: `${verse.verse}. ` })
-            line.appendText(verse.text.replace(/<br\s*\/?>/giu, ' ').trim())
-          })
-        })
+        renderPassage(this.bodyEl, state.passage)
       }
     })
     this.embedButton.disabled = !this.states.every(
@@ -163,9 +148,7 @@ export class BibleReferencePopover extends HoverPopover {
   }
 
   private createPassageSection(label: string): HTMLElement {
-    const section = this.bodyEl.createDiv({ cls: 'obr-reference-passage' })
-    section.createEl('h4', { text: label })
-    return section
+    return createPassageSection(this.bodyEl, label)
   }
 
   private beginEdit(): void {

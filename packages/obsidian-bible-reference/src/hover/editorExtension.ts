@@ -6,6 +6,7 @@ import {
   ViewPlugin,
   ViewUpdate,
 } from '@codemirror/view'
+import { Platform } from 'obsidian'
 import type BibleReferencePlugin from '../main'
 import { scanBibleReferences } from '../utils/scanBibleReferences'
 import { BibleReferenceController } from './BibleReferenceController'
@@ -103,11 +104,36 @@ export const createBibleReferenceEditorExtension = (
           immediate ? 0 : plugin.settings.hoverPreviewDelayMs
         )
       }
+
+      public openTapped(target: HTMLElement, event: MouseEvent): void {
+        if (
+          !plugin.settings.enableHoverPreviews ||
+          !plugin.settings.hoverPreviewInLivePreview
+        ) {
+          return
+        }
+        const position =
+          this.view.posAtCoords({ x: event.clientX, y: event.clientY }) ??
+          this.view.posAtDOM(target)
+        const block = findBlock(this.view, position)
+        const offset = position - block.from
+        const reference = scanBibleReferences(
+          block.text,
+          controller.scanOptions()
+        ).find((candidate) =>
+          candidate.occurrences.some(
+            (occurrence) =>
+              occurrence.start <= offset && offset <= occurrence.end
+          )
+        )
+        if (reference) controller.openTapped(reference)
+      }
     },
     {
       decorations: (value) => value.decorations,
       eventHandlers: {
         mouseover(event) {
+          if (Platform.isMobile) return false
           const target = (event.target as HTMLElement | null)?.closest(
             '.obr-bible-reference'
           ) as HTMLElement | null
@@ -115,10 +141,21 @@ export const createBibleReferenceEditorExtension = (
           return false
         },
         focusin(event) {
+          if (Platform.isMobile) return false
           const target = (event.target as HTMLElement | null)?.closest(
             '.obr-bible-reference'
           ) as HTMLElement | null
           if (target) this.open(target, true)
+          return false
+        },
+        // Touch devices have no hover: a tap shows just that reference. The
+        // tap still places the cursor, so editing keeps working.
+        click(event) {
+          if (!Platform.isMobile) return false
+          const target = (event.target as HTMLElement | null)?.closest(
+            '.obr-bible-reference'
+          ) as HTMLElement | null
+          if (target) this.openTapped(target, event)
           return false
         },
         keydown(event) {
