@@ -1,4 +1,8 @@
-import { MarkdownPostProcessorContext, MarkdownRenderChild } from 'obsidian'
+import {
+  MarkdownPostProcessorContext,
+  MarkdownRenderChild,
+  Platform,
+} from 'obsidian'
 import type BibleReferencePlugin from '../main'
 import { scanBibleReferences } from '../utils/scanBibleReferences'
 import { BibleReferenceController } from './BibleReferenceController'
@@ -50,8 +54,13 @@ class ReadingReferenceChild extends MarkdownRenderChild {
       excludeMarkdown: false,
       ...this.controller.scanOptions(),
     })
+    const owners = new Map(
+      references.flatMap((reference) =>
+        reference.occurrences.map((occurrence) => [occurrence, reference])
+      )
+    )
     const occurrences = nonOverlapping(
-      references.flatMap((reference) => reference.occurrences),
+      [...owners.keys()],
       textNode.length
     ).reverse()
     occurrences.forEach((occurrence) => {
@@ -64,6 +73,15 @@ class ReadingReferenceChild extends MarkdownRenderChild {
       span.setAttr('aria-label', `Preview ${occurrence.raw}`)
       match.parentNode?.insertBefore(span, match)
       span.appendChild(match)
+      const reference = owners.get(occurrence)
+      if (Platform.isMobile) {
+        if (reference) {
+          this.registerDomEvent(span, 'click', () =>
+            this.controller.openTapped(reference)
+          )
+        }
+        return
+      }
       this.registerDomEvent(span, 'mouseenter', () => {
         void this.controller.openReadingBlock(
           span,

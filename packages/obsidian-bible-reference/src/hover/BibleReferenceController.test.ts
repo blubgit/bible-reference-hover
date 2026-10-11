@@ -1,5 +1,8 @@
+import { Modal } from 'obsidian'
 import { DEFAULT_SETTINGS } from '../data/constants'
+import { normalizeBibleReference } from '../utils/scanBibleReferences'
 import { BibleReferenceController } from './BibleReferenceController'
+import { BibleReferenceModal } from './BibleReferenceModal'
 import { SourceTarget } from './SourceTarget'
 
 describe('BibleReferenceController hover lifecycle', () => {
@@ -20,5 +23,30 @@ describe('BibleReferenceController hover lifecycle', () => {
 
     expect(controller.hoverPopover).not.toBeNull()
     expect(controller.hoverPopover?.hoverEl.isConnected).toBe(true)
+  })
+})
+
+describe('BibleReferenceController taps', () => {
+  test('opens a modal for only the tapped reference', () => {
+    const opened: unknown[] = []
+    const originalOpen = Modal.prototype.open
+    Modal.prototype.open = function (this: unknown) {
+      opened.push(this)
+    }
+    const controller = new BibleReferenceController({
+      app: {},
+      settings: DEFAULT_SETTINGS,
+    } as never)
+    const reference = normalizeBibleReference('James 3:13-18')
+
+    controller.openTapped({ ...reference, occurrences: [] })
+
+    expect(opened).toHaveLength(1)
+    expect(opened[0]).toBeInstanceOf(BibleReferenceModal)
+    expect((opened[0] as { reference: unknown }).reference).toEqual({
+      ...reference,
+      occurrences: [],
+    })
+    Modal.prototype.open = originalOpen
   })
 })

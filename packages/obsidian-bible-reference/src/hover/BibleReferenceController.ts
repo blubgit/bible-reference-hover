@@ -7,8 +7,12 @@ import {
   TFile,
 } from 'obsidian'
 import type BibleReferencePlugin from '../main'
-import { scanBibleReferences } from '../utils/scanBibleReferences'
+import {
+  scanBibleReferences,
+  ScannedBibleReference,
+} from '../utils/scanBibleReferences'
 import { BibleReferenceLookup } from './BibleReferenceLookup'
+import { BibleReferenceModal } from './BibleReferenceModal'
 import { BibleReferencePopover } from './BibleReferencePopover'
 import { findSourceBlock } from './findSourceBlock'
 import {
@@ -95,6 +99,12 @@ export class BibleReferenceController implements HoverParent {
         content
       )
     )
+  }
+
+  /** Shows only the tapped reference; touch devices have no hover. */
+  public openTapped(reference: ScannedBibleReference): void {
+    this.dismissPopovers()
+    new BibleReferenceModal(this.plugin.app, this.lookup, reference).open()
   }
 
   public scanOptions(): { chapterOnly: boolean } {
