@@ -56,9 +56,9 @@ describe('scanBibleReferences', () => {
       'A concluding note.',
     ].join('\n')
 
-    expect(scanBibleReferences(source).map((reference) => reference.normalized)).toEqual([
-      'James 1:2–4',
-    ])
+    expect(
+      scanBibleReferences(source).map((reference) => reference.normalized)
+    ).toEqual(['James 1:2–4'])
   })
 
   test.each([
