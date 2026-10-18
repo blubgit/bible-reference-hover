@@ -49,6 +49,16 @@ Jude 3             a verse in a one-chapter book
 - **Embed verses.** Insert the passages below the paragraph as a collapsible Bible callout, quote callout, or HTML details block. Your original text stays as it was.
 - **Prints cleanly.** Exported PDFs show references as plain text, without the hover underline.
 
+### Embed a whole note at once
+
+Right-click anywhere in a note (no selection needed) and select **Add Bible Reference (Full Note)**.
+
+- **One widget per block.** It puts one widget under each paragraph or list that mentions a reference, the same as the hover's **Embed verses** button. A list gets a single widget, titled like `Luke 8:2 · Isaiah 43:1`. It uses your current settings: widget style, collapsed or open, and translation.
+- **Safe to run twice.** It skips headings, code blocks, frontmatter, quotes, existing callouts, and blocks that already have a widget. Running it again won't duplicate anything.
+- **Live progress.** A notice in the top right counts reference blocks as their verses load, for example **Adding reference blocks: 12 of 40**. When it finishes, it shows how many blocks were added and how many were skipped, and why (already had verses, or could not be loaded).
+- **Fetched once, four at a time.** Each distinct passage is fetched once, using the same source as hover. This is the same network use as a preview, just more of it in one go. Verses are cached on your device, so later runs are quick.
+- **One undo.** All changes go in as one edit, so a single undo reverts them. If the note changes while verses are loading, it stops and tells you instead of inserting in the wrong place. If a passage fails to load, that block is skipped.
+
 ### Also included
 
 These features come from the original [Bible Reference](https://github.com/tim-hub/obsidian-bible-reference) plugin:
@@ -93,7 +103,7 @@ Open **Settings → Bible Reference Hover**. Hover-related options:
 
 ## Privacy and network use
 
-- **Nothing is sent until you open a preview.** Detecting references happens entirely on your device.
+- **Nothing is sent until you open a preview or run Add Bible Reference (Full Note).** Detecting references happens entirely on your device.
 - **Online translations** are fetched from the Bible text provider for the selected translation ([bible-api.com](https://bible-api.com), [Bolls Life](https://bolls.life), or [Bible SuperSearch](https://www.biblesupersearch.com)). Only the requested reference and translation are sent.
 - **Offline mode** uses the bundled World English Bible and makes no network requests.
 - **Verse of the day** requests the daily verse from [OurManna](https://ourmanna.com).
