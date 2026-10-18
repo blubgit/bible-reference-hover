@@ -14,6 +14,7 @@ import {
 import { BibleReferenceLookup } from './BibleReferenceLookup'
 import { BibleReferenceModal } from './BibleReferenceModal'
 import { BibleReferencePopover } from './BibleReferencePopover'
+import { embedFullNote } from './embedFullNote'
 import { findSourceBlock } from './findSourceBlock'
 import {
   EditorSourceTarget,
@@ -69,6 +70,15 @@ export class BibleReferenceController implements HoverParent {
     const start = editor.getCursor('from')
     const end = editor.getCursor('to')
     this.open(null, new EditorSourceTarget(editor, start, text, end), point, 0)
+  }
+
+  public embedFullNote(editor: Editor): Promise<void> {
+    return embedFullNote(
+      editor,
+      this.lookup,
+      () => this.plugin.settings,
+      this.scanOptions()
+    )
   }
 
   public async openReadingBlock(

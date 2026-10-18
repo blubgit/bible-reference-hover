@@ -13,17 +13,26 @@ export const registerBibleReferenceHover = (
   )
   plugin.registerEvent(
     plugin.app.workspace.on('editor-menu', (menu, editor) => {
-      if (!editor.somethingSelected()) return
+      if (editor.somethingSelected()) {
+        menu.addItem((item) =>
+          item
+            .setTitle('Scan for Bible references')
+            .setIcon('scan-search')
+            .onClick((event) => {
+              const point =
+                event instanceof MouseEvent
+                  ? { x: event.clientX, y: event.clientY }
+                  : undefined
+              controller.openEditorSelection(editor, point)
+            })
+        )
+      }
       menu.addItem((item) =>
         item
-          .setTitle('Scan for Bible references')
-          .setIcon('scan-search')
-          .onClick((event) => {
-            const point =
-              event instanceof MouseEvent
-                ? { x: event.clientX, y: event.clientY }
-                : undefined
-            controller.openEditorSelection(editor, point)
+          .setTitle('Add Bible reference (full note)')
+          .setIcon('book-plus')
+          .onClick(() => {
+            void controller.embedFullNote(editor)
           })
       )
     })
