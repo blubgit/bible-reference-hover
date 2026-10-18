@@ -1,6 +1,10 @@
 import { findEmbedBlocks } from './findEmbedBlocks'
 
-const find = (...lines: string[]) => findEmbedBlocks(lines)
+const findAll = (...lines: string[]) => findEmbedBlocks(lines)
+const find = (...lines: string[]) =>
+  findAll(...lines)
+    .filter((block) => !block.embedded)
+    .map(({ first, last }) => ({ first, last }))
 
 describe('findEmbedBlocks', () => {
   test('finds paragraphs and whole lists, not headings', () => {
@@ -39,13 +43,24 @@ describe('findEmbedBlocks', () => {
     ).toEqual([{ first: 13, last: 13 }])
   })
 
-  test('skips a block that already has a widget below it', () => {
+  test('flags a block that already has a widget below it', () => {
+    const blocks = findAll(
+      '- Luke 8:2',
+      '',
+      '> [!bible]- Luke 8:2',
+      '> text',
+      '',
+      'Mark 1:1'
+    )
+    expect(blocks.map((block) => block.embedded)).toEqual([true, false])
     expect(
-      find('- Luke 8:2', '', '> [!bible]- Luke 8:2', '> text', '', 'Mark 1:1')
-    ).toEqual([{ first: 5, last: 5 }])
-    expect(
-      find('Luke 8:2', '', '<details class="obr-bible-widget">', '</details>')
-    ).toEqual([])
+      findAll(
+        'Luke 8:2',
+        '',
+        '<details class="obr-bible-widget">',
+        '</details>'
+      )
+    ).toEqual([{ first: 0, last: 0, embedded: true }])
   })
 
   test('handles an unclosed fence', () => {

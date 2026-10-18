@@ -9,6 +9,8 @@ export interface EmbedBlock {
   /** Inclusive, zero-based line range. */
   first: number
   last: number
+  /** True when a widget already sits beneath the block. */
+  embedded: boolean
 }
 
 const skipFrontmatter = (lines: readonly string[]): number => {
@@ -28,7 +30,8 @@ const hasWidgetAfter = (lines: readonly string[], last: number): boolean => {
 /**
  * Finds every paragraph and list in a note that may receive an embedded
  * widget: the same blocks hovering shows, minus headings, code, quotes and
- * callouts, HTML details, and blocks that already have a widget beneath them.
+ * callouts and HTML details. Blocks that already have a widget beneath them are
+ * returned too, flagged `embedded`.
  */
 export const findEmbedBlocks = (lines: readonly string[]): EmbedBlock[] => {
   const blocks: EmbedBlock[] = []
@@ -56,7 +59,11 @@ export const findEmbedBlocks = (lines: readonly string[]): EmbedBlock[] => {
       index++
     } else {
       const { last } = findSourceBlock(lines, index)
-      if (!hasWidgetAfter(lines, last)) blocks.push({ first: index, last })
+      blocks.push({
+        first: index,
+        last,
+        embedded: hasWidgetAfter(lines, last),
+      })
       index = last + 1
     }
   }

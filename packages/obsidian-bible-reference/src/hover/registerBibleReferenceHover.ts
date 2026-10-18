@@ -29,7 +29,7 @@ export const registerBibleReferenceHover = (
       }
       menu.addItem((item) =>
         item
-          .setTitle('Add Bible reference (full note)')
+          .setTitle('Add Bible Reference (Full Note)')
           .setIcon('book-plus')
           .onClick(() => {
             void controller.embedFullNote(editor)

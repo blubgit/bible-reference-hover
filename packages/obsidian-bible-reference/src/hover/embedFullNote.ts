@@ -18,14 +18,23 @@ interface PlannedEmbed {
 const planEmbeds = (
   lines: string[],
   scanOptions: { chapterOnly: boolean }
-): PlannedEmbed[] =>
-  findEmbedBlocks(lines).flatMap(({ first, last }) => {
+): { todo: PlannedEmbed[]; alreadyEmbedded: number } => {
+  const todo: PlannedEmbed[] = []
+  let alreadyEmbedded = 0
+  findEmbedBlocks(lines).forEach(({ first, last, embedded }) => {
     const references = scanBibleReferences(
       lines.slice(first, last + 1).join('\n'),
       scanOptions
     )
-    return references.length ? [{ endLine: last, references }] : []
+    if (references.length === 0) return
+    if (embedded) alreadyEmbedded++
+    else todo.push({ endLine: last, references })
   })
+  return { todo, alreadyEmbedded }
+}
+
+const plural = (count: number): string =>
+  `${count} reference block${count === 1 ? '' : 's'}`
 
 /** Runs `task` over `items` with at most `limit` in flight at once. */
 const runLimited = async <T>(
@@ -55,9 +64,13 @@ export const embedFullNote = async (
 ): Promise<void> => {
   const snapshot = editor.getValue()
   const lines = snapshot.split('\n')
-  const plan = planEmbeds(lines, scanOptions)
+  const { todo: plan, alreadyEmbedded } = planEmbeds(lines, scanOptions)
   if (plan.length === 0) {
-    new Notice('No new Bible references to embed.')
+    new Notice(
+      alreadyEmbedded
+        ? `No new reference blocks. ${alreadyEmbedded} already had verses.`
+        : 'No Bible references found in this note.'
+    )
     return
   }
 
@@ -69,7 +82,19 @@ export const embedFullNote = async (
     )
   )
   const loaded = new Map<string, ReferencePassage | null>()
-  const progress = new Notice('Embedding Bible verses…', 0)
+  const blocksReady = (): number =>
+    plan.filter(({ references }) =>
+      references.every((reference) =>
+        loaded.has(reference.normalized.toLocaleLowerCase())
+      )
+    ).length
+  const progress = new Notice('', 0)
+  const showProgress = (): void => {
+    progress.setMessage(
+      `Adding reference blocks: ${blocksReady()} of ${plan.length}`
+    )
+  }
+  showProgress()
   try {
     await runLimited([...unique], MAX_PARALLEL_LOOKUPS, async ([key, ref]) => {
       try {
@@ -77,20 +102,21 @@ export const embedFullNote = async (
       } catch {
         loaded.set(key, null)
       }
+      showProgress()
     })
   } finally {
     progress.hide()
   }
 
   const changes: EditorChange[] = []
-  let skipped = 0
+  let failed = 0
   plan.forEach(({ endLine, references }) => {
     const passages = references.map((reference) => {
       const passage = loaded.get(reference.normalized.toLocaleLowerCase())
       return passage ? { ...passage, reference } : null
     })
     if (passages.some((passage) => !passage)) {
-      skipped++
+      failed++
       return
     }
     changes.push({
@@ -103,13 +129,20 @@ export const embedFullNote = async (
   })
 
   if (editor.getValue() !== snapshot) {
-    new Notice('The note changed. Run Add Bible reference again.')
+    new Notice('The note changed. Run Add Bible Reference again.')
     return
   }
   if (changes.length) editor.transaction({ changes })
+
+  const skipped = failed + alreadyEmbedded
+  const reasons = [
+    alreadyEmbedded ? `${alreadyEmbedded} already had verses` : '',
+    failed ? `${failed} could not be loaded` : '',
+  ].filter(Boolean)
   new Notice(
-    skipped
-      ? `Embedded verses in ${changes.length} places. ${skipped} could not be loaded.`
-      : `Embedded verses in ${changes.length} places.`
+    `Added ${plural(changes.length)}. Skipped ${skipped}${
+      reasons.length ? ` (${reasons.join(', ')})` : ''
+    }.`,
+    8000
   )
 }
