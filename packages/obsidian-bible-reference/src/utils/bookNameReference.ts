@@ -1,9 +1,6 @@
 import Reference from 'bible-reference-toolkit'
 
-export const getBookIdFromBookName = (
-  bookName: string,
-  languageCode: string = 'en'
-): number => {
+const lookupBookId = (bookName: string, languageCode: string): number => {
   try {
     return Reference.bookIdFromTranslationAndName(languageCode, bookName)
   } catch {
@@ -11,6 +8,30 @@ export const getBookIdFromBookName = (
     return Reference.bookIdFromName(bookName)
   }
 }
+
+// Scanning a note probes the same words again and again, and every miss throws.
+// Caching hits and misses keeps a scan from paying for that each time.
+const bookIdCache = new Map<string, number | Error>()
+
+export const getBookIdFromBookName = (
+  bookName: string,
+  languageCode: string = 'en'
+): number => {
+  const key = `${languageCode}\u0000${bookName}`
+  let result = bookIdCache.get(key)
+  if (result === undefined) {
+    try {
+      result = lookupBookId(bookName, languageCode)
+    } catch (error) {
+      result = error instanceof Error ? error : new Error(String(error))
+    }
+    bookIdCache.set(key, result)
+  }
+  if (result instanceof Error) throw result
+  return result
+}
+
+const knownBookCache = new Map<string, boolean>()
 
 /**
  * Reduce a book-name candidate to the longest trailing run of words the catalog
@@ -50,19 +71,24 @@ export const isKnownBookName = (
   candidate: string,
   languageCode: string = 'en'
 ): boolean => {
-  try {
-    getBookIdFromBookName(candidate, languageCode)
-    return true
-  } catch {
-    return false
+  const key = `${languageCode}\u0000${candidate}`
+  let known = knownBookCache.get(key)
+  if (known === undefined) {
+    try {
+      getBookIdFromBookName(candidate, languageCode)
+      known = true
+    } catch {
+      known = false
+    }
+    knownBookCache.set(key, known)
   }
+  return known
 }
 
 export const getFullBookName = (
   name: string,
   languageCode: string = 'en'
 ): string => {
-  console.debug('getFullBookName', name, languageCode)
   const bookId = getBookIdFromBookName(name, languageCode)
 
   try {
