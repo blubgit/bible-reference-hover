@@ -62,25 +62,39 @@ export const createBibleReferenceEditorExtension = (
   ViewPlugin.fromClass(
     class {
       public decorations: DecorationSet
+      private optionsKey = ''
 
       public constructor(private readonly view: EditorView) {
-        this.decorations = buildDecorations(
-          view,
-          !!plugin.settings.enableHoverPreviews &&
-            !!plugin.settings.hoverPreviewInLivePreview,
-          plugin.settings.detectChapterOnlyReferences ?? true
-        )
+        this.decorations = this.rebuild(view)
       }
 
       public update(update: ViewUpdate): void {
-        if (update.docChanged || update.viewportChanged) {
-          this.decorations = buildDecorations(
-            update.view,
-            !!plugin.settings.enableHoverPreviews &&
-              !!plugin.settings.hoverPreviewInLivePreview,
-            plugin.settings.detectChapterOnlyReferences ?? true
-          )
+        // Decorations cover the whole note, so scrolling needs no rescan.
+        // Rebuild only when the text or the relevant settings change.
+        const enabled = this.isEnabled()
+        const chapterOnly = this.chapterOnly()
+        const key = `${enabled}:${chapterOnly}`
+        if (update.docChanged || key !== this.optionsKey) {
+          this.decorations = this.rebuild(update.view)
         }
+      }
+
+      private isEnabled(): boolean {
+        return (
+          !!plugin.settings.enableHoverPreviews &&
+          !!plugin.settings.hoverPreviewInLivePreview
+        )
+      }
+
+      private chapterOnly(): boolean {
+        return plugin.settings.detectChapterOnlyReferences ?? true
+      }
+
+      private rebuild(view: EditorView): DecorationSet {
+        const enabled = this.isEnabled()
+        const chapterOnly = this.chapterOnly()
+        this.optionsKey = `${enabled}:${chapterOnly}`
+        return buildDecorations(view, enabled, chapterOnly)
       }
 
       public open(target: HTMLElement, immediate: boolean): void {
