@@ -86,21 +86,28 @@ class ReadingReferenceChild extends MarkdownRenderChild {
         void this.controller.openReadingBlock(
           span,
           this.containerEl,
-          this.context
+          this.context,
+          reference?.normalized
         )
       })
       this.registerDomEvent(span, 'focus', () => {
         void this.controller.openReadingBlock(
           span,
           this.containerEl,
-          this.context
+          this.context,
+          reference?.normalized
         )
       })
       this.registerDomEvent(span, 'keydown', (event) => {
         if (event.key !== 'Tab' || event.shiftKey) return
         event.preventDefault()
         void this.controller
-          .openReadingBlock(span, this.containerEl, this.context)
+          .openReadingBlock(
+            span,
+            this.containerEl,
+            this.context,
+            reference?.normalized
+          )
           .then(() => this.controller.focusFirstAction())
       })
     })

@@ -106,6 +106,16 @@ export const createBibleReferenceEditorExtension = (
         }
         const position = this.view.posAtDOM(target)
         const block = findBlock(this.view, position)
+        const offset = position - block.from
+        const hovered = scanBibleReferences(
+          block.text,
+          controller.scanOptions()
+        ).find((candidate) =>
+          candidate.occurrences.some(
+            (occurrence) =>
+              occurrence.start <= offset && offset <= occurrence.end
+          )
+        )
         controller.open(
           target,
           new CodeMirrorSourceTarget(
@@ -115,7 +125,8 @@ export const createBibleReferenceEditorExtension = (
             block.to
           ),
           undefined,
-          immediate ? 0 : plugin.settings.hoverPreviewDelayMs
+          immediate ? 0 : plugin.settings.hoverPreviewDelayMs,
+          hovered?.normalized
         )
       }
 

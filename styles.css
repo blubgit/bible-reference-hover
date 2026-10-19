@@ -143,3 +143,7 @@
   justify-content: flex-end;
   margin-top: var(--size-4-1);
 }
+
+.obr-reference-actions button[hidden] {
+  display: none;
+}
