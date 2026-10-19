@@ -52,4 +52,41 @@ describe('BibleReferencePopover passage labels', () => {
     expect(headings).toEqual(['1 John 1:4–5', '1 John 2:5–6', '1 John 3:1–2'])
     expect(verseLabels).toEqual(['4. ', '5. ', '5. ', '6. ', '1. ', '2. '])
   })
+
+  test('shows only the hovered reference until expanded', async () => {
+    const references = scanBibleReferences('John 3:16; Romans 8:28')
+    const source: SourceTarget = {
+      text: 'John 3:16; Romans 8:28',
+      replace: async () => true,
+      insertAfter: async () => true,
+    }
+    const load = jest.fn(async (reference: (typeof references)[number]) => ({
+      reference,
+      translationKey: 'esv',
+      verses: [{ book_name: 'Romans', chapter: 8, verse: 28, text: 'x' }],
+    }))
+    const popover = new BibleReferencePopover(
+      { hoverPopover: null },
+      source,
+      references,
+      { load } as never,
+      () => DEFAULT_SETTINGS,
+      null,
+      0,
+      undefined,
+      () => {},
+      'Romans 8:28'
+    )
+    await new Promise((resolve) => setTimeout(resolve, 5))
+
+    expect(load).toHaveBeenCalledTimes(1)
+    expect(load.mock.calls[0][0].normalized).toBe('Romans 8:28')
+
+    const hoverEl = popover.hoverEl as unknown as {
+      findByTagName(tagName: string): Array<{ textContent: string }>
+    }
+    expect(
+      hoverEl.findByTagName('h4').map((element) => element.textContent)
+    ).toEqual(['Romans 8:28'])
+  })
 })

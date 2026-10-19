@@ -23,7 +23,10 @@ export class BibleReferencePopover extends HoverPopover {
   private referenceEl: HTMLElement
   private editButton: HTMLButtonElement
   private embedButton: HTMLButtonElement
+  private expandButton: HTMLButtonElement
   private closed = false
+  /** Index of the only reference shown until the card is expanded. */
+  private compactIndex: number | null = null
 
   public constructor(
     parent: HoverParent,
@@ -34,10 +37,17 @@ export class BibleReferencePopover extends HoverPopover {
     targetEl: HTMLElement | null,
     waitTime: number,
     staticPos?: Point,
-    private readonly onClosed: () => void = () => {}
+    private readonly onClosed: () => void = () => {},
+    hoveredReference?: string
   ) {
     super(parent, targetEl, waitTime, staticPos)
     this.references = references
+    const hoveredIndex = references.findIndex(
+      (reference) => reference.normalized === hoveredReference
+    )
+    if (references.length > 1 && hoveredIndex >= 0) {
+      this.compactIndex = hoveredIndex
+    }
     this.hoverEl.addClass('obr-reference-popover')
     this.hoverEl.setAttr('role', 'dialog')
     this.hoverEl.setAttr('aria-label', 'Bible reference preview')
@@ -54,15 +64,24 @@ export class BibleReferencePopover extends HoverPopover {
       cls: 'mod-cta',
       attr: { type: 'button', 'aria-label': 'Embed verses' },
     })
+    this.expandButton = actions.createEl('button', {
+      text: 'Show all',
+      attr: {
+        type: 'button',
+        'aria-label': `Show all ${references.length} references`,
+      },
+    })
     this.bodyEl = this.hoverEl.createDiv({ cls: 'obr-reference-passages' })
 
     this.registerDomEvent(this.editButton, 'click', () => this.beginEdit())
     this.registerDomEvent(this.embedButton, 'click', () => {
       void this.embed()
     })
+    this.registerDomEvent(this.expandButton, 'click', () => this.expand())
     this.registerDomEvent(this.hoverEl, 'keydown', (event) => {
       if (event.key === 'Escape') this.unload()
     })
+    this.applyMode()
     this.renderChips()
     void this.loadPassages()
   }
@@ -82,16 +101,40 @@ export class BibleReferencePopover extends HoverPopover {
   }
 
   public focusFirstAction(): void {
+    if (this.compactIndex !== null) this.expandButton.focus()
+    else this.editButton.focus()
+  }
+
+  private visibleIndexes(): number[] {
+    return this.compactIndex === null
+      ? this.references.map((_, index) => index)
+      : [this.compactIndex]
+  }
+
+  private applyMode(): void {
+    const compact = this.compactIndex !== null
+    this.editButton.hidden = compact
+    this.embedButton.hidden = compact
+    this.expandButton.hidden = !compact
+  }
+
+  private expand(): void {
+    this.compactIndex = null
+    this.applyMode()
+    this.renderChips()
     this.editButton.focus()
+    void this.loadPassages()
   }
 
   private renderChips(): void {
     this.referenceEl.empty()
+    const visible = this.visibleIndexes()
     this.referenceEl.setAttr(
       'aria-label',
-      this.references.map((reference) => reference.normalized).join(', ')
+      visible.map((index) => this.references[index].normalized).join(', ')
     )
-    this.references.forEach((reference, index) => {
+    visible.forEach((referenceIndex, index) => {
+      const reference = this.references[referenceIndex]
       if (index > 0) {
         this.referenceEl.createSpan({
           cls: 'obr-reference-separator',
@@ -111,7 +154,8 @@ export class BibleReferencePopover extends HoverPopover {
     this.states = this.references.map(() => ({ status: 'loading' }))
     this.renderPassages()
     await Promise.all(
-      this.references.map(async (reference, index) => {
+      this.visibleIndexes().map(async (index) => {
+        const reference = this.references[index]
         try {
           const passage = await this.lookup.load(reference)
           if (generation !== this.generation) return
@@ -130,7 +174,8 @@ export class BibleReferencePopover extends HoverPopover {
 
   private renderPassages(): void {
     this.bodyEl.empty()
-    this.references.forEach((reference, index) => {
+    this.visibleIndexes().forEach((index) => {
+      const reference = this.references[index]
       const state = this.states[index]
       if (!state || state.status === 'loading') {
         const section = this.createPassageSection(reference.normalized)
@@ -142,8 +187,8 @@ export class BibleReferencePopover extends HoverPopover {
         renderPassage(this.bodyEl, state.passage)
       }
     })
-    this.embedButton.disabled = !this.states.every(
-      (state) => state.status === 'loaded'
+    this.embedButton.disabled = !this.visibleIndexes().every(
+      (index) => this.states[index]?.status === 'loaded'
     )
   }
 

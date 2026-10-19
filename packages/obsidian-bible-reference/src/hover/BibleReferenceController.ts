@@ -36,7 +36,8 @@ export class BibleReferenceController implements HoverParent {
     targetEl: HTMLElement | null,
     source: SourceTarget,
     point?: Point,
-    waitTime = this.plugin.settings.hoverPreviewDelayMs ?? 300
+    waitTime = this.plugin.settings.hoverPreviewDelayMs ?? 300,
+    hoveredReference?: string
   ): void {
     const references = scanBibleReferences(source.text, this.scanOptions())
     if (references.length === 0) return
@@ -52,7 +53,8 @@ export class BibleReferenceController implements HoverParent {
       point,
       () => {
         if (this.pendingPopover === popover) this.pendingPopover = null
-      }
+      },
+      hoveredReference
     )
     // HoverPopover assigns itself to hoverPopover only when its delay expires.
     // Assigning it there early makes Obsidian mistake it for an older popover
@@ -84,7 +86,8 @@ export class BibleReferenceController implements HoverParent {
   public async openReadingBlock(
     targetEl: HTMLElement,
     blockEl: HTMLElement,
-    context: MarkdownPostProcessorContext
+    context: MarkdownPostProcessorContext,
+    hoveredReference?: string
   ): Promise<void> {
     const info = context.getSectionInfo(blockEl)
     const file = this.plugin.app.vault.getAbstractFileByPath(context.sourcePath)
@@ -107,7 +110,10 @@ export class BibleReferenceController implements HoverParent {
         range.text,
         range.to,
         content
-      )
+      ),
+      undefined,
+      undefined,
+      hoveredReference
     )
   }
 
