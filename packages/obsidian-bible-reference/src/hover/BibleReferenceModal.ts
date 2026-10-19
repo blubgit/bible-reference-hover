@@ -32,7 +32,7 @@ export class BibleReferenceModal extends Modal {
 
   private async load(body: HTMLElement): Promise<void> {
     try {
-      const passage = await this.lookup.load(this.reference)
+      const passage = await this.lookup.loadWithContext(this.reference)
       body.empty()
       renderPassage(body, passage)
     } catch (error) {

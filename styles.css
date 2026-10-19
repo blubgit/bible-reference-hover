@@ -147,3 +147,9 @@
 .obr-reference-actions button[hidden] {
   display: none;
 }
+
+.obr-reference-passage p.obr-reference-focus {
+  background: var(--background-modifier-hover);
+  border-radius: var(--radius-s);
+  padding: var(--size-4-1) var(--size-4-2);
+}

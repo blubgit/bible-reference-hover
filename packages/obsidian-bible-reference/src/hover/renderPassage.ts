@@ -11,12 +11,16 @@ export const createPassageSection = (
   return section
 }
 
-/** Renders a passage as one titled section per chapter. */
+/** Renders a passage as one titled section per chapter. With context, the
+ * referenced verses are bold among the surrounding verses. */
 export const renderPassage = (
   container: HTMLElement,
   passage: ReferencePassage
 ): void => {
-  groupVersesByChapter(passage.verses).forEach((group) => {
+  const focused = passage.context
+    ? new Set(passage.verses.map(({ chapter, verse }) => `${chapter}:${verse}`))
+    : null
+  groupVersesByChapter(passage.context ?? passage.verses).forEach((group) => {
     const section = createPassageSection(container, group.label)
     section.createDiv({
       cls: 'obr-reference-translation',
@@ -28,7 +32,13 @@ export const renderPassage = (
     group.verses.forEach((verse) => {
       const line = section.createEl('p')
       line.createEl('strong', { text: `${verse.verse}. ` })
-      line.appendText(verse.text.replace(/<br\s*\/?>/giu, ' ').trim())
+      const text = verse.text.replace(/<br\s*\/?>/giu, ' ').trim()
+      if (focused?.has(`${verse.chapter}:${verse.verse}`)) {
+        line.addClass('obr-reference-focus')
+        line.createEl('strong', { text })
+      } else {
+        line.appendText(text)
+      }
     })
   })
 }
