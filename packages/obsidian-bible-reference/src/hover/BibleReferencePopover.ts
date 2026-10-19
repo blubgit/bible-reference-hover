@@ -38,7 +38,8 @@ export class BibleReferencePopover extends HoverPopover {
     waitTime: number,
     staticPos?: Point,
     private readonly onClosed: () => void = () => {},
-    hoveredReference?: string
+    hoveredReference?: string,
+    private readonly confirmOverwrite: () => Promise<boolean> = async () => true
   ) {
     super(parent, targetEl, waitTime, staticPos)
     this.references = references
@@ -332,7 +333,9 @@ export class BibleReferencePopover extends HoverPopover {
     )
     if (passages.length !== this.references.length) return
     const widget = buildEmbeddedWidget(passages, this.getSettings())
-    if (await this.source.insertAfter(widget)) {
+    const overwrite = this.source.hasEmbedded()
+    if (overwrite && !(await this.confirmOverwrite())) return
+    if (await this.source.insertAfter(widget, overwrite)) {
       new Notice('Bible verses embedded.')
     } else {
       new Notice('The note changed. Reopen the preview before embedding.')

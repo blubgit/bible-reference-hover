@@ -14,6 +14,7 @@ import {
 import { BibleReferenceLookup } from './BibleReferenceLookup'
 import { BibleReferenceModal } from './BibleReferenceModal'
 import { BibleReferencePopover } from './BibleReferencePopover'
+import { ConfirmOverwriteModal } from './ConfirmOverwriteModal'
 import { embedFullNote } from './embedFullNote'
 import { findSourceBlock } from './findSourceBlock'
 import {
@@ -54,7 +55,8 @@ export class BibleReferenceController implements HoverParent {
       () => {
         if (this.pendingPopover === popover) this.pendingPopover = null
       },
-      hoveredReference
+      hoveredReference,
+      () => new ConfirmOverwriteModal(this.plugin.app).ask()
     )
     // HoverPopover assigns itself to hoverPopover only when its delay expires.
     // Assigning it there early makes Obsidian mistake it for an older popover
