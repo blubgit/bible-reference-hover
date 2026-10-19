@@ -1,10 +1,24 @@
 import { Editor, EditorPosition, TFile, Vault } from 'obsidian'
 import { EditorView } from '@codemirror/view'
+import { findExistingWidgetEnd } from './findExistingWidget'
 
 export interface SourceTarget {
   readonly text: string
   replace(nextText: string): Promise<boolean>
-  insertAfter(markdown: string): Promise<boolean>
+  /** True when verses are already embedded beneath this block. */
+  hasEmbedded(): boolean
+  /** Inserts a widget beneath the block, replacing an existing one if `overwrite`. */
+  insertAfter(markdown: string, overwrite?: boolean): Promise<boolean>
+}
+
+/** Offset range beneath the block that `insertAfter` should replace. */
+const widgetSpan = (
+  text: string,
+  blockEnd: number,
+  overwrite: boolean
+): { from: number; to: number } => {
+  const end = overwrite ? findExistingWidgetEnd(text, blockEnd) : null
+  return { from: blockEnd, to: end ?? blockEnd }
 }
 
 const advancePosition = (
@@ -40,9 +54,28 @@ export class EditorSourceTarget implements SourceTarget {
     return true
   }
 
-  public async insertAfter(markdown: string): Promise<boolean> {
+  public hasEmbedded(): boolean {
+    const text = this.editor.getValue()
+    return (
+      findExistingWidgetEnd(text, this.editor.posToOffset(this.end)) !== null
+    )
+  }
+
+  public async insertAfter(
+    markdown: string,
+    overwrite = false
+  ): Promise<boolean> {
     if (this.editor.getRange(this.start, this.end) !== this.text) return false
-    this.editor.replaceRange(`\n\n${markdown}`, this.end)
+    const { from, to } = widgetSpan(
+      this.editor.getValue(),
+      this.editor.posToOffset(this.end),
+      overwrite
+    )
+    this.editor.replaceRange(
+      `\n\n${markdown}`,
+      this.editor.offsetToPos(from),
+      this.editor.offsetToPos(to)
+    )
     return true
   }
 }
@@ -71,13 +104,21 @@ export class CodeMirrorSourceTarget implements SourceTarget {
     return true
   }
 
-  public async insertAfter(markdown: string): Promise<boolean> {
+  public hasEmbedded(): boolean {
+    return (
+      findExistingWidgetEnd(this.view.state.doc.toString(), this.to) !== null
+    )
+  }
+
+  public async insertAfter(
+    markdown: string,
+    overwrite = false
+  ): Promise<boolean> {
     if (this.view.state.doc.sliceString(this.from, this.to) !== this.text) {
       return false
     }
-    this.view.dispatch({
-      changes: { from: this.to, insert: `\n\n${markdown}` },
-    })
+    const span = widgetSpan(this.view.state.doc.toString(), this.to, overwrite)
+    this.view.dispatch({ changes: { ...span, insert: `\n\n${markdown}` } })
     return true
   }
 }
@@ -119,7 +160,14 @@ export class FileSourceTarget implements SourceTarget {
     return changed
   }
 
-  public async insertAfter(markdown: string): Promise<boolean> {
+  public hasEmbedded(): boolean {
+    return findExistingWidgetEnd(this.fileSnapshot, this.to) !== null
+  }
+
+  public async insertAfter(
+    markdown: string,
+    overwrite = false
+  ): Promise<boolean> {
     let changed = false
     let nextSnapshot = this.fileSnapshot
     await this.vault.process(this.file, (current) => {
@@ -129,8 +177,9 @@ export class FileSourceTarget implements SourceTarget {
       ) {
         return current
       }
+      const span = widgetSpan(current, this.to, overwrite)
       nextSnapshot =
-        current.slice(0, this.to) + `\n\n${markdown}` + current.slice(this.to)
+        current.slice(0, span.from) + `\n\n${markdown}` + current.slice(span.to)
       changed = true
       return nextSnapshot
     })
