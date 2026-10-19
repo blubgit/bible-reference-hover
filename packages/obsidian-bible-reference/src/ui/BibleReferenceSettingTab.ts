@@ -44,6 +44,7 @@ import {
 } from '../data/constants'
 import { pluginEvent } from '../obsidian/PluginEvent'
 import { getBookTag, getChapterTag } from '../utils/getTags'
+import { clampContextVerses, MAX_CONTEXT_VERSES } from '../hover/verseContext'
 
 function escapeHtml(unsafe: string) {
   return unsafe
@@ -204,6 +205,38 @@ Obsidian Bible Reference  is proudly powered by
           .setValue(this.plugin.settings.hoverPreviewInLivePreview ?? true)
           .onChange(async (value) => {
             this.plugin.settings.hoverPreviewInLivePreview = value
+            await this.plugin.saveSettings()
+          })
+      )
+
+    new Setting(this.containerEl)
+      .setName('Show surrounding verses')
+      .setDesc(
+        'Show verses before and after the hovered reference, with the reference in bold. Whole chapters are shown as they are.'
+      )
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.hoverContextEnabled ?? true)
+          .onChange(async (value) => {
+            this.plugin.settings.hoverContextEnabled = value
+            await this.plugin.saveSettings()
+          })
+      )
+
+    new Setting(this.containerEl)
+      .setName('Surrounding verses')
+      .setDesc(
+        `Number of verses to show before and after the reference (1 to ${MAX_CONTEXT_VERSES}).`
+      )
+      .addText((text) =>
+        text
+          .setValue(
+            String(clampContextVerses(this.plugin.settings.hoverContextVerses))
+          )
+          .onChange(async (value) => {
+            const parsed = Number.parseInt(value, 10)
+            if (!Number.isFinite(parsed)) return
+            this.plugin.settings.hoverContextVerses = clampContextVerses(parsed)
             await this.plugin.saveSettings()
           })
       )

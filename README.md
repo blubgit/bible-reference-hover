@@ -98,6 +98,8 @@ Open **Settings → Bible Reference Hover**. Hover-related options:
 | **Hover delay**                                       | Desktop only. How long to hover before the preview opens (0–2000 ms). |
 | **Default hover translation**                         | Translation used unless a reference ends with `@translation`.         |
 | **Reading view previews** / **Live Preview previews** | Choose where references are detected, for hover and tap.              |
+| **Show surrounding verses**                           | Show verses before and after the hovered reference, which stays bold. |
+| **Surrounding verses**                                | How many verses to show on each side (1–30, default 7).               |
 | **Detect chapter-only references**                    | Preview references like `Ps 82` as whole chapters.                    |
 | **Embedded widget style** / **Initially collapsed**   | How embedded verses look when inserted.                               |
 

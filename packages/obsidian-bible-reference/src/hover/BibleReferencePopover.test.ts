@@ -19,13 +19,12 @@ describe('BibleReferencePopover passage labels', () => {
       { book_name: '1 John', chapter: 3, verse: 1, text: 'Verse 3:1' },
       { book_name: '1 John', chapter: 3, verse: 2, text: 'Verse 3:2' },
     ]
-    const lookup = {
-      load: async (reference: (typeof references)[number]) => ({
-        reference,
-        translationKey: 'esv',
-        verses,
-      }),
-    }
+    const load = async (reference: (typeof references)[number]) => ({
+      reference,
+      translationKey: 'esv',
+      verses,
+    })
+    const lookup = { load, loadWithContext: load }
     const parent = { hoverPopover: null }
 
     const popover = new BibleReferencePopover(
@@ -69,7 +68,7 @@ describe('BibleReferencePopover passage labels', () => {
       { hoverPopover: null },
       source,
       references,
-      { load } as never,
+      { load, loadWithContext: load } as never,
       () => DEFAULT_SETTINGS,
       null,
       0,
@@ -88,5 +87,47 @@ describe('BibleReferencePopover passage labels', () => {
     expect(
       hoverEl.findByTagName('h4').map((element) => element.textContent)
     ).toEqual(['Romans 8:28'])
+  })
+})
+
+describe('BibleReferencePopover context', () => {
+  test('bolds the referenced verse among its surrounding verses', async () => {
+    const references = scanBibleReferences('John 8:44')
+    const verse = (n: number) => ({
+      book_name: 'John',
+      chapter: 8,
+      verse: n,
+      text: `Text ${n}`,
+    })
+    const load = async (reference: (typeof references)[number]) => ({
+      reference,
+      translationKey: 'esv',
+      verses: [verse(44)],
+      context: [verse(43), verse(44), verse(45)],
+    })
+    const popover = new BibleReferencePopover(
+      { hoverPopover: null },
+      {
+        text: 'John 8:44',
+        replace: async () => true,
+        insertAfter: async () => true,
+      },
+      references,
+      { load, loadWithContext: load } as never,
+      () => DEFAULT_SETTINGS,
+      null,
+      0
+    )
+    await new Promise((resolve) => setTimeout(resolve, 5))
+
+    const hoverEl = popover.hoverEl as unknown as {
+      findByTagName(tagName: string): Array<{ textContent: string }>
+    }
+    const bold = hoverEl
+      .findByTagName('strong')
+      .map((element) => element.textContent)
+    expect(bold).toContain('Text 44')
+    expect(bold).not.toContain('Text 43')
+    expect(bold).toEqual(expect.arrayContaining(['43. ', '44. ', '45. ']))
   })
 })
