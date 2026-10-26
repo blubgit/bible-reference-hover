@@ -17,6 +17,7 @@ const AMBIGUOUS_BOOK_NAMES = new Set([
   'esther',
   'ex',
   'ezra',
+  'in',
   'is',
   'james',
   'job',
