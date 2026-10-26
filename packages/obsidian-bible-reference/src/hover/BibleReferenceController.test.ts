@@ -15,6 +15,7 @@ describe('BibleReferenceController hover lifecycle', () => {
     const source: SourceTarget = {
       text: 'John 3:16',
       replace: async () => true,
+      hasEmbedded: () => false,
       insertAfter: async () => true,
     }
 

@@ -9,6 +9,7 @@ describe('BibleReferencePopover passage labels', () => {
     const source: SourceTarget = {
       text: '1 John 1:4-5, 2:5-6, 3:1-2',
       replace: async () => true,
+      hasEmbedded: () => false,
       insertAfter: async () => true,
     }
     const verses = [
@@ -58,6 +59,7 @@ describe('BibleReferencePopover passage labels', () => {
     const source: SourceTarget = {
       text: 'John 3:16; Romans 8:28',
       replace: async () => true,
+      hasEmbedded: () => false,
       insertAfter: async () => true,
     }
     const load = jest.fn(async (reference: (typeof references)[number]) => ({
