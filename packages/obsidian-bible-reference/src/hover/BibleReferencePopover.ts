@@ -152,13 +152,17 @@ export class BibleReferencePopover extends HoverPopover {
 
   private async loadPassages(): Promise<void> {
     const generation = ++this.generation
+    // Context suits one reference at a time; "Show all" stays compact.
+    const withContext = this.visibleIndexes().length === 1
     this.states = this.references.map(() => ({ status: 'loading' }))
     this.renderPassages()
     await Promise.all(
       this.visibleIndexes().map(async (index) => {
         const reference = this.references[index]
         try {
-          const passage = await this.lookup.load(reference)
+          const passage = withContext
+            ? await this.lookup.loadWithContext(reference)
+            : await this.lookup.load(reference)
           if (generation !== this.generation) return
           this.states[index] = { status: 'loaded', passage }
         } catch (error) {
