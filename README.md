@@ -46,7 +46,7 @@ Jude 3             a verse in a one-chapter book
 ### Edit and embed
 
 - **Edit references.** Fix or change references in the preview. Apply the change to the preview only, or update the note too.
-- **Embed verses.** Insert the passages below the paragraph as a collapsible Bible callout, quote callout, or HTML details block. Your original text stays as it was.
+- **Embed verses.** Insert the passages below the paragraph as a collapsible Bible callout, quote callout, or HTML details block. Your original text stays as it was. If the paragraph already has embedded verses, you're asked before they're overwritten.
 - **Prints cleanly.** Exported PDFs show references as plain text, without the hover underline.
 
 ### Embed a whole note at once
