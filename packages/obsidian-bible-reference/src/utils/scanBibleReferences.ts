@@ -205,6 +205,16 @@ const trimOrdinalOfNextBook = (
     : tail.length
 }
 
+/**
+ * Whether a bare number is the ordinal of the next book, as the "2" in
+ * "In 2 Cor 12", so it is not also read as a chapter of the word before it.
+ */
+const startsNextBook = (text: string, number: string, end: number): boolean => {
+  if (!/^[1-5]$/u.test(number)) return false
+  const nextWord = text.slice(end).match(/^\.?[^\S\r\n]*([\p{L}\p{M}]+)/u)?.[1]
+  return !!nextWord && isKnownBookName(`${number} ${nextWord}`)
+}
+
 const findVerseReferences = (
   text: string,
   excluded: Array<{ start: number; end: number }>
@@ -249,6 +259,7 @@ const findChapterOnlyReferences = (
   let match: RegExpExecArray | null
   while ((match = CHAPTER_ONLY_START_REG.exec(text)) !== null) {
     const end = match.index + match[0].length
+    if (startsNextBook(text, match[0], end)) continue
     const book = locateBook(text, match.index)
     if (!book || startsLowercase(book.bookName)) continue
     const translationKey = match[1]?.toLowerCase()

@@ -141,6 +141,13 @@ describe('chapter-only references', () => {
     ])
   })
 
+  test('does not read the word "In" as John', () => {
+    expect(scan('In 3 places he says it.')).toEqual([])
+    expect(scan('In 2 Cor 12, weakness is a condition.')).toEqual([
+      ['2 Corinthians 12', '2 Corinthians 12:1-21'],
+    ])
+  })
+
   test('keeps a translation suffix', () => {
     expect(scan('Ps 23@NKJV')).toEqual([['Psalm 23@nkjv', 'Psalm 23:1-6']])
   })

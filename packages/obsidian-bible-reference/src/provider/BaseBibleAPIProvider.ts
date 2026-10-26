@@ -162,7 +162,8 @@ export abstract class BaseBibleAPIProvider {
         )
         return hits.length ? hits : fetched
       }
-      return fetched
+      // Open-ended [n, 999]: a whole-chapter fetch also holds verses before n.
+      return fetched.filter((item) => item.verse >= verse[0])
     } catch (e) {
       this._currentQueryUrl = referenceUrl
       this.updateOriginalReferenceUrl()
