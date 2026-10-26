@@ -1,92 +1,128 @@
 ---
 name: release
-description: Use when releasing a new version of this plugin — version is bumped in the plugin package.json (source of truth), synced to manifest.json / versions.json, then tagged and pushed
+description: Use when releasing a new version of this plugin — set the x.y.z version in the plugin package.json (source of truth), sync it to the other version files, commit, tag, and push to main
 model: haiku
 ---
 
-# Release Obsidian Bible Reference Plugin
+# Release Bible Reference Hover
 
 ## Overview
 
 This is a Bun workspace monorepo. The **plugin `package.json`** at
 `packages/obsidian-bible-reference/package.json` is the **single source of truth**
-for the version. The `version` script auto-derives today's date version, writes it
-into the plugin `package.json`, and syncs `manifest.json` and `versions.json` at the
-repo root. This project uses date-based versioning (`YY.MM.DD`).
+for the version. The `version` script copies it into the root `package.json`,
+`manifest.json`, and `versions.json`. Pushing a version tag starts the GitHub
+Actions **Release plugin** workflow, which builds the plugin and publishes the
+release with `main.js`, `manifest.json`, and `styles.css` attached.
 
-## Version Format
+The default branch is **`main`**.
 
-`YY.MM.DD` — e.g. `26.05.08` for 2026-05-08. The version script generates this from
-the current date automatically. If today already has a release tag, it appends
-`-1`, `-2`, … for the next same-day release. Pass an explicit version as an argument
-to override the date (e.g. `bun run --filter obsidian-bible-reference version 26.07.14`).
+## Version format
+
+Semantic versioning, `x.y.z` (for example `1.2.0`). The version script rejects
+anything else. There is no `v` prefix on the tag, which is an Obsidian guideline.
+
+Choose the number from what changed since the last tag:
+
+- **Patch** (`1.1.1`): bug or performance fixes, no new features.
+- **Minor** (`1.2.0`): a new user-facing feature or command.
+- **Major** (`2.0.0`): a breaking change.
+
+If the user has not named a version, recommend one and confirm before continuing.
+Releasing publishes to users, so get an explicit go-ahead first.
+
+## Before you start
+
+- Everything meant for the release must already be merged to `main`. Check with
+  `git log --oneline <last tag>..main`.
+- The working tree must be clean.
+- README and docs should describe any new feature.
 
 ## Preflight
 
-Run before touching any version files. Do not proceed if either fails.
+Run before touching any version file. Stop if either fails.
 
 ```bash
-bun run build   # must exit 0 (builds packages + plugin, emits main.js to repo root)
-bun test        # must exit 0
+bun run build   # must exit 0 (builds packages and the plugin, writes main.js to the repo root)
+bun run test    # must exit 0
 ```
 
 ## Steps
 
-1. **Pull latest master**
+1. **Update `main`**
+
    ```bash
-   git checkout master && git pull origin master
+   git checkout main && git pull origin main
    ```
 
-2. **Bump + sync the version (one command)** — auto-sets today's `YY.MM.DD`
-   into the plugin `package.json`, `manifest.json`, and `versions.json`:
-   ```bash
-   bun run --filter obsidian-bible-reference version
-   ```
-   It prints `version set to <NEW_VERSION>`. Capture it for the commit/tag:
-   ```bash
-   VERSION=$(node -p "require('./packages/obsidian-bible-reference/package.json').version")
-   echo "$VERSION"
-   ```
-   > Note: the version script only adds an entry to `versions.json` when
-   > `minAppVersion` hasn't been seen before. If skipped, add
-   > `"<VERSION>": "0.12.0"` to `versions.json` manually.
+2. **Set the version** in `packages/obsidian-bible-reference/package.json`, then
+   sync the other files:
 
-3. **Refresh lockfile**
+   ```bash
+   # edit "version" in packages/obsidian-bible-reference/package.json to NEW_VERSION
+   bun run --filter bible-reference-hover version
+   ```
+
+   It prints `version set to <NEW_VERSION>`. It updates the root `package.json`,
+   `manifest.json`, and `versions.json` (adding `"<NEW_VERSION>": "<minAppVersion>"`).
+
+3. **Refresh the lockfile**
+
    ```bash
    bun install
    ```
 
-4. **Stage and commit**
+4. **Commit.** The message is just the version string, matching earlier releases.
+   The pre-commit hook runs ESLint and Prettier; fix what it reports instead of
+   skipping it.
+
    ```bash
-   git add packages/obsidian-bible-reference/package.json bun.lock manifest.json versions.json
-   git commit -m "$VERSION"
+   git add bun.lock manifest.json package.json packages/obsidian-bible-reference/package.json versions.json
+   git commit -m "<NEW_VERSION>"
    ```
 
-5. **Tag** (no `v` prefix — Obsidian guideline)
+5. **Tag** with the exact version, no `v`:
+
    ```bash
-   git tag "$VERSION"
+   git tag <NEW_VERSION>
    ```
 
-6. **Push commit and tag**
+6. **Push the commit, then the tag.** The tag push publishes the release.
+
    ```bash
-   git push origin master
-   git push origin "$VERSION"
+   git push origin main
+   git push origin <NEW_VERSION>
    ```
+
+7. **Confirm the release.** The **Release plugin** run takes about a minute.
+
+   ```bash
+   gh run list --repo blubgit/bible-reference-hover --limit 3
+   gh release view <NEW_VERSION> --repo blubgit/bible-reference-hover --json url,isDraft,assets
+   ```
+
+   Done when the release is not a draft and lists `main.js`, `manifest.json`,
+   and `styles.css`. The release notes are generated from the titles of merged
+   pull requests, so clear PR titles make clear notes.
 
 ## Checklist
 
-- [ ] Build passes (`bun run build`)
-- [ ] Tests pass (`bun test`)
-- [ ] `packages/obsidian-bible-reference/package.json` version matches new version
-- [ ] `manifest.json` version matches new version (synced by the version script)
-- [ ] `versions.json` has entry for new version
-- [ ] `bun.lock` updated (`bun install` run)
-- [ ] Commit message is just the version string (matches project convention)
-- [ ] Tag pushed (CI attaches `main.js`, `manifest.json`, `styles.css` as release assets)
+- [ ] Version confirmed with the user
+- [ ] Everything for the release is merged to `main`
+- [ ] Build passes (`bun run build`) and tests pass (`bun run test`)
+- [ ] Plugin `package.json`, root `package.json`, `manifest.json` all show the new version
+- [ ] `versions.json` has an entry for the new version
+- [ ] `bun.lock` refreshed (`bun install`)
+- [ ] Commit message is only the version string
+- [ ] Commit and tag both pushed
+- [ ] GitHub release is published with all three assets
 
-## Common Mistakes
+## Common mistakes
 
-- Bumping the root `package.json` instead of the plugin package.json (the plugin one is the source of truth)
-- Forgetting `bun install` — lockfile drifts from package.json
-- Tagging before committing the bumped files
-- Pushing the commit but not the tag (`git push origin master` vs `git push origin <TAG>`)
+- Editing the root `package.json` instead of the plugin one. The script overwrites the root copy.
+- Using a date version or a `v` prefix. Use plain `x.y.z`.
+- Forgetting `bun install`, so the lockfile drifts.
+- Tagging before the version files are committed.
+- Pushing the commit but not the tag. Only the tag push publishes the release.
+- Using `gh` without `--repo blubgit/bible-reference-hover`. This repo is a fork, so `gh` defaults to the upstream (tim-hub) repo.
+- Releasing changes that are still on a branch. Merge them to `main` first, or they will not be in the release.
